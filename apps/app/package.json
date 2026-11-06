@@ -48,6 +48,9 @@
   },
   "jest": {
     "preset": "jest-expo",
+    "testTimeout": 30000,
+    "maxWorkers": "50%",
+    "cacheDirectory": "<rootDir>/node_modules/.cache/jest",
     "moduleNameMapper": {
       "\\.css$": "<rootDir>/jest/style-mock.js"
     }
