@@ -1,7 +1,9 @@
 import { healthResponseSchema } from "@repo/shared";
 import { testClient } from "hono/testing";
 import { describe, expect, it } from "vitest";
-import app from "./app";
+import { createApp } from "./app";
+
+const app = createApp();
 
 describe("GET /health", () => {
   it("returns ok with a valid body", async () => {

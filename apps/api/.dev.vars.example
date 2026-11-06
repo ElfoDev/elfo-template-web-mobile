@@ -1,0 +1,19 @@
+# Copy to `.dev.vars` (gitignored). Read by `pnpm dev:api`, `pnpm db:migrate` and `wrangler dev`.
+# Everything is optional for `pnpm dev:api`: without DATABASE_URL it uses PGlite in `.data/pglite`,
+# and without BETTER_AUTH_SECRET it uses a dev-only secret.
+
+# Neon connection string. Required by `pnpm --filter @repo/api dev:worker` and in production.
+# DATABASE_URL=postgresql://user:password@ep-xxx.region.aws.neon.tech/neondb?sslmode=require
+
+# Signs cookies and tokens. Generate one with: openssl rand -base64 32
+# BETTER_AUTH_SECRET=
+
+# Origins Better Auth trusts (web app URL, app scheme, Expo Go). Defaults below.
+# Add your LAN URL (e.g. http://192.168.0.10:8081) to sign in from the web on another device.
+# TRUSTED_ORIGINS=http://localhost:8081,foremanapp://,exp://
+
+# Optional OAuth. Callback URLs: <API URL>/api/auth/callback/github and .../callback/google
+# GITHUB_CLIENT_ID=
+# GITHUB_CLIENT_SECRET=
+# GOOGLE_CLIENT_ID=
+# GOOGLE_CLIENT_SECRET=

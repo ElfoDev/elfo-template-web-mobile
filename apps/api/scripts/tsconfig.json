@@ -1,0 +1,9 @@
+{
+  // Node-only files (local dev server, migrations, drizzle-kit config). The Worker code in
+  // `src/` is checked by ../tsconfig.json with the Workers types instead.
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": [".", "../drizzle.config.ts"]
+}
