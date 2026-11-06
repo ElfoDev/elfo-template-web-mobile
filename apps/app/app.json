@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Foreman App",
-    "slug": "foreman-template-web-mobile",
+    "name": "Elfo App",
+    "slug": "elfo-template-web-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",

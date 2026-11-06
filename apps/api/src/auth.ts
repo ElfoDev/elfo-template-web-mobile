@@ -84,7 +84,7 @@ export function createAuth({ db, env, baseURL }: CreateAuthOptions) {
   }
 
   return betterAuth({
-    appName: "Foreman App",
+    appName: "Elfo App",
     baseURL,
     basePath: AUTH_BASE_PATH,
     secret,

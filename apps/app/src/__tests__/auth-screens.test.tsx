@@ -42,7 +42,7 @@ describe("sign-in screen", () => {
       email: "ana@example.com",
       password: "correct-horse",
     });
-    expect(await screen.findByText("Foreman · Web + Mobile")).toBeOnTheScreen();
+    expect(await screen.findByText("Elfo · Web + Mobile")).toBeOnTheScreen();
     expect(screen).toHavePathname("/");
   });
 

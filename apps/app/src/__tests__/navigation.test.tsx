@@ -37,7 +37,7 @@ describe("route guard", () => {
     setSession(fakeSession());
     await renderRouter("./src/app", { initialUrl: "/sign-in" });
 
-    expect(await screen.findByText("Foreman · Web + Mobile")).toBeOnTheScreen();
+    expect(await screen.findByText("Elfo · Web + Mobile")).toBeOnTheScreen();
     expect(screen).toHavePathname("/");
   });
 });
@@ -50,7 +50,7 @@ describe("tabs (signed in)", () => {
   it("opens on the home tab and exposes every tab", async () => {
     await renderRouter("./src/app", { initialUrl: "/" });
 
-    expect(await screen.findByText("Foreman · Web + Mobile")).toBeOnTheScreen();
+    expect(await screen.findByText("Elfo · Web + Mobile")).toBeOnTheScreen();
     expect(screen).toHavePathname("/");
     for (const tab of ["Início", "Tarefas", "Perfil", "Sobre"]) {
       expect(screen.getAllByText(tab).length).toBeGreaterThan(0);

@@ -1,6 +1,6 @@
-# foreman-template-web-mobile
+# elfo-template-web-mobile
 
-Template Foreman de produto **web + mobile**: um único app **Expo** (iOS, Android e Web) e uma API **Hono** no **Cloudflare Workers**, tudo em TypeScript, com tipos e schemas compartilhados.
+Template Elfo de produto **web + mobile**: um único app **Expo** (iOS, Android e Web) e uma API **Hono** no **Cloudflare Workers**, tudo em TypeScript, com tipos e schemas compartilhados.
 
 - `apps/app`: Expo + Expo Router + NativeWind
 - `apps/api`: Hono no Worker, Postgres (Neon) com Drizzle e login com Better Auth

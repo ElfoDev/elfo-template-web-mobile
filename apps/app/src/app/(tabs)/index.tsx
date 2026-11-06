@@ -13,7 +13,7 @@ export default function HomeScreen() {
     >
       <View className="items-center gap-2">
         <Text className="text-center text-3xl font-bold text-neutral-900 dark:text-white">
-          Foreman · Web + Mobile
+          Elfo · Web + Mobile
         </Text>
         <Text className="text-center text-base text-neutral-600 dark:text-neutral-400">
           Um app Expo para iOS, Android e Web, com API Hono no Cloudflare Workers.
