@@ -13,7 +13,7 @@ export const authProvidersResponseSchema = z.object({
 
 export type AuthProvidersResponse = z.infer<typeof authProvidersResponseSchema>;
 
-/** Minimum password length, same as Better Auth's default. */
+/** Minimum password length. The API enforces it too (`minPasswordLength` in `auth.ts`). */
 export const PASSWORD_MIN_LENGTH = 8;
 
 export const signInSchema = z.object({

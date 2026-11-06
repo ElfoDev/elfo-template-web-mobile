@@ -1,4 +1,5 @@
-import { type Auth, createAuth } from "./auth";
+import { type Auth, authBaseURL, createAuth } from "./auth";
+import { ConfigError } from "./config";
 import { createNeonDb, type Database } from "./db/client";
 import type { Bindings } from "./env";
 
@@ -20,7 +21,7 @@ export function createServices(env: Bindings, requestUrl: string, db?: Database)
   const getDb = (): Database => {
     if (!database) {
       if (!env.DATABASE_URL) {
-        throw new Error(
+        throw new ConfigError(
           "DATABASE_URL is not set. Locally `pnpm dev:api` uses PGlite; in the Worker set the Neon URL.",
         );
       }
@@ -37,7 +38,7 @@ export function createServices(env: Bindings, requestUrl: string, db?: Database)
       auth ??= createAuth({
         db: getDb(),
         env,
-        baseURL: env.BETTER_AUTH_URL ?? new URL(requestUrl).origin,
+        baseURL: authBaseURL(env, requestUrl),
       });
       return auth;
     },

@@ -10,13 +10,18 @@
   // Non-secret config only. Secrets go in `.dev.vars` locally and `wrangler secret put` in prod:
   //   DATABASE_URL (Neon), BETTER_AUTH_SECRET, and optionally
   //   GITHUB_CLIENT_ID/GITHUB_CLIENT_SECRET, GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET.
+  //
+  // The API fails closed: without the vars below the auth routes answer 500 with a message
+  // naming the missing one. Do NOT set ENVIRONMENT here: "development" (only in `.dev.vars`)
+  // turns on local defaults (localhost origins, request-derived URL, no rate limit).
   "vars": {
-    // Comma-separated list of allowed browser origins. "*" allows any origin.
-    "CORS_ORIGINS": "*"
-    // Origins Better Auth trusts and that may send the session cookie (web URL + app scheme).
-    // Unset = local defaults: "http://localhost:8081,foremanapp://,exp://" (see src/auth.ts).
-    // "TRUSTED_ORIGINS": "https://app.example.com,foremanapp://",
-    // Public URL of the API (OAuth callbacks). Unset = origin of each request.
-    // "BETTER_AUTH_URL": "https://api.example.com"
+    // Required. Public URL of the API (OAuth callbacks, cookie scope):
+    // "BETTER_AUTH_URL": "https://api.example.com",
+    // Required. Origins Better Auth trusts and that may send the session cookie (web URL + app scheme):
+    // "TRUSTED_ORIGINS": "https://api.example.com,foremanapp://",
+    // Only if a web app is served from ANOTHER origin than the API. Explicit list, never "*"
+    // (the API uses credentials). The web app is planned for the same origin as the API (APP-3),
+    // which needs no CORS at all. Unset = no cross-origin browser access.
+    // "CORS_ORIGINS": "https://app.example.com"
   }
 }

@@ -2,10 +2,12 @@ import { createApp } from "../app";
 import { createPgliteDb, type PgliteDb } from "../db/pglite";
 import type { Bindings } from "../env";
 
-/** Origin of the Expo web dev server: trusted by default, so browsers may send cookies. */
+/** Origin of the Expo web dev server: trusted in development, so browsers may send cookies. */
 export const WEB_ORIGIN = "http://localhost:8081";
 
+/** Local-development bindings (`ENVIRONMENT=development`): defaults on, rate limit off. */
 export const TEST_ENV: Bindings = {
+  ENVIRONMENT: "development",
   CORS_ORIGINS: "*",
   BETTER_AUTH_SECRET: "test-secret-test-secret-test-secret-test-secret",
   BETTER_AUTH_URL: "http://localhost:8787",

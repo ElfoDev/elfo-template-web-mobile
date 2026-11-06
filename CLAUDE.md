@@ -7,7 +7,7 @@ Guia para agents (e humanos) trabalhando neste repo. Leia antes de mudar código
 - **Monorepo pnpm** (versão fixa em `packageManager`), Node 22, TypeScript strict em todos os pacotes.
 - **`apps/app`**: um único app **Expo** (SDK 58) para iOS, Android e Web, com **Expo Router** (rotas por arquivo em `src/app/`) e **NativeWind** v4 (Tailwind v3 via `className`).
 - **`apps/api`**: **Hono** rodando em **Cloudflare Workers** (`wrangler`).
-  - Banco: **Postgres** com **Drizzle**. Produção: **Neon** via HTTP (`@neondatabase/serverless`). Local e testes: **PGlite** (Postgres em WASM, sem conta nem Docker).
+  - Banco: **Postgres** com **Drizzle**. Produção: **Neon** via HTTP (`@neondatabase/serverless`, driver `neon-http`). Local e testes: **PGlite** (Postgres em WASM, sem conta nem Docker).
   - Login: **Better Auth** em `/api/auth/*` (e-mail + senha; GitHub e Google opcionais via env) com o plugin **`@better-auth/expo`**.
 - **`packages/shared`**: schemas **zod**, tipos e o cliente tipado da API via **Hono RPC** (`hc<AppType>`).
 - Qualidade: **Biome** (lint + format), **Vitest** (api e shared), **jest-expo + Testing Library** (app), `expo export --platform web` no build e `expo-doctor` no CI.
@@ -39,7 +39,8 @@ apps/
     src/app.ts            createApp(): middlewares + todas as rotas encadeadas; exporta AppType
     src/index.ts          entry do Worker (createApp() com Neon)
     src/routes/*.ts       uma sub-app Hono por recurso (health, tasks, auth-providers)
-    src/auth.ts           Better Auth (createAuth por request, trusted origins, OAuth)
+    src/auth.ts           Better Auth (createAuth por request, trusted origins, rate limit, OAuth)
+    src/config.ts         ConfigError (vira 500 com mensagem) e isDevelopment(env)
     src/services.ts       db + auth do request, criados sob demanda (c.var.services)
     src/middleware/       requireUser: 401 sem sessão, expõe c.var.user
     src/db/schema.ts      schema Drizzle (tabelas do Better Auth + task)
@@ -85,9 +86,12 @@ packages/
 - **Expo muda a cada SDK**: antes de usar uma API do Expo/React Native, confira a doc da versão instalada (`https://docs.expo.dev/versions/v58.0.0/`) em vez de confiar na memória.
 - Testing Library v14: `render`, `fireEvent`, `userEvent` e `renderRouter` são **async**; sempre use `await`.
 - **Rotas autenticadas na API**: use `requireUser` (`.use(requireUser)` na sub-app) e filtre **toda** query por `c.var.user.id`; recurso de outro usuário responde 404, igual a um que não existe (veja `routes/tasks.ts`). Teste a autorização entre usuários com `createTestApi()`.
-- **Banco**: tabelas em `apps/api/src/db/schema.ts`. As do Better Auth (`user`, `session`, `account`, `verification`) precisam manter os nomes das propriedades. O driver Neon HTTP não tem transações interativas (`db.transaction`); use `db.batch` se precisar.
+- **Banco**: tabelas em `apps/api/src/db/schema.ts`. As do Better Auth (`user`, `session`, `account`, `verification`, `rateLimit`) precisam manter os nomes das propriedades. O driver Neon HTTP (`neon-http`) não tem transações interativas (`db.transaction`); use `db.batch` se precisar.
+- **Transações e Better Auth**: conferido na fonte do `@better-auth/drizzle-adapter` (1.7): só chama `db.transaction` se `transaction: true` (padrão `false`; os outros usos são só do provider MySQL). Por isso mantemos `neon-http` (um `fetch` por query, sem conexão para abrir/fechar a cada request no Worker) e deixamos `transaction: false` **explícito** em `auth.ts`. Custo: operações compostas (ex.: criar usuário + conta no OAuth) rodam em sequência, sem atomicidade. O teste `no database transactions` (`config.test.ts`) quebra se alguém ligar a opção ou usar `db.transaction`, o que o PGlite dos outros testes esconderia. Se um dia precisar de transação de verdade, troque para `drizzle-orm/neon-serverless` (Pool via WebSocket, criado e fechado por request) e ligue `transaction: true`.
+- **Falhar fechado fora do dev**: `ENVIRONMENT=development` (só em `.dev.vars`; `pnpm dev:api` já define) liga os defaults locais: origens `localhost:8081`/`foremanapp://`/`exp://`, `baseURL` derivado do request, CORS `*` e rate limit desligado. Sem ele (produção), `TRUSTED_ORIGINS` e `BETTER_AUTH_URL` são **obrigatórios**: sem eles as rotas de auth/banco respondem 500 com a mensagem do que falta (`ConfigError` em `src/config.ts`; `/health` segue funcionando). Nunca ponha `ENVIRONMENT` no `wrangler.jsonc`. `CORS_ORIGINS` em produção é uma lista explícita (`*` é ignorado; não setado = sem acesso cross-origin), pois a API usa credenciais; o web roda na mesma origem da API (APP-3), o que dispensa CORS.
+- **Rate limit**: Better Auth com `storage: "database"` (tabela `rate_limit`, migration `0001`), ligado fora do dev (o padrão dele só liga com `NODE_ENV=production`, que o Worker não define). O IP vem de `cf-connecting-ip`. Senha: mínimo de `PASSWORD_MIN_LENGTH` (shared) também na API.
 - **Sessão no app**: `authClient.useSession()` (de `@/lib/auth-client`). Chamadas à API passam pelo `api` de `@/lib/api`, que já manda a sessão (cookie no web, header `Cookie` no nativo). Telas protegidas ficam dentro de `(tabs)` (ou outro grupo sob `Stack.Protected guard={signedIn}` em `_layout.tsx`).
-- **Origens confiáveis** (`TRUSTED_ORIGINS` na API): Better Auth só aceita requests de login vindas delas, e só elas podem mandar cookie via CORS. Padrão local: `http://localhost:8081`, `foremanapp://` (scheme do `app.json`) e `exp://` (Expo Go). Abrindo o app web por IP da rede, adicione essa URL.
+- **Origens confiáveis** (`TRUSTED_ORIGINS` na API): Better Auth só aceita requests de login vindas delas, e só elas podem mandar cookie via CORS. Padrão só com `ENVIRONMENT=development`: `http://localhost:8081`, `foremanapp://` (scheme do `app.json`) e `exp://` (Expo Go); em produção a variável é obrigatória. Abrindo o app web por IP da rede, adicione essa URL.
 - Testes do app: `jest/setup.ts` troca `@/lib/auth-client` por `src/test-utils/auth-mock.ts` em todos os testes; controle a sessão com `setSession(fakeSession())` / `setSession(null)` e confira chamadas em `authClient.signIn.email` etc.
 - Jest do app (`jest` em `apps/app/package.json`): `testTimeout` de 30s global, porque o primeiro teste de cada arquivo paga a transformação fria do React Native/Expo Router. Não ajuste timeout teste a teste. O cache de transformação fica em `apps/app/node_modules/.cache/jest` e o CI o restaura com `actions/cache`.
 

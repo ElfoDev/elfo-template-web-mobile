@@ -1,10 +1,19 @@
-import { boolean, index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  bigint,
+  boolean,
+  index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
 
 /**
  * Database schema (Drizzle). After changing it, run `pnpm db:generate` and commit the
  * generated migration in `apps/api/drizzle/`.
  *
- * `user`, `session`, `account` and `verification` are Better Auth's core tables: keep the
+ * `user`, `session`, `account`, `verification` and `rateLimit` are Better Auth's tables: keep the
  * property names (Better Auth looks columns up by them); the SQL column names are free.
  */
 
@@ -77,6 +86,15 @@ export const verification = pgTable(
   },
   (table) => [index("verification_identifier_idx").on(table.identifier)],
 );
+
+/** Better Auth rate limiter state (`rateLimit.storage: "database"`), one row per key. */
+export const rateLimit = pgTable("rate_limit", {
+  id: text("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  count: integer("count").notNull(),
+  /** Unix time in milliseconds of the last request counted in the window. */
+  lastRequest: bigint("last_request", { mode: "number" }).notNull(),
+});
 
 // ---------------------------------------------------------------------------
 // App

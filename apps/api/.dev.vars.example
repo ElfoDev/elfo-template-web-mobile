@@ -2,13 +2,19 @@
 # Everything is optional for `pnpm dev:api`: without DATABASE_URL it uses PGlite in `.data/pglite`,
 # and without BETTER_AUTH_SECRET it uses a dev-only secret.
 
+# Enables local-only defaults: localhost trusted origins, API URL taken from the request and no
+# rate limit. Required for `wrangler dev` (`dev:worker`); `pnpm dev:api` sets it by itself.
+# Never set it in production: there the API fails closed and needs TRUSTED_ORIGINS/BETTER_AUTH_URL.
+ENVIRONMENT=development
+
 # Neon connection string. Required by `pnpm --filter @repo/api dev:worker` and in production.
 # DATABASE_URL=postgresql://user:password@ep-xxx.region.aws.neon.tech/neondb?sslmode=require
 
 # Signs cookies and tokens. Generate one with: openssl rand -base64 32
 # BETTER_AUTH_SECRET=
 
-# Origins Better Auth trusts (web app URL, app scheme, Expo Go). Defaults below.
+# Origins Better Auth trusts (web app URL, app scheme, Expo Go). With ENVIRONMENT=development the
+# defaults below apply; in production this is required.
 # Add your LAN URL (e.g. http://192.168.0.10:8081) to sign in from the web on another device.
 # TRUSTED_ORIGINS=http://localhost:8081,foremanapp://,exp://
 

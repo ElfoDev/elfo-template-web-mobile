@@ -130,6 +130,9 @@ describe("configuration errors", () => {
   it("answers 500 when the Worker has no DATABASE_URL", async () => {
     const res = await createApp().request("/tasks", {}, TEST_ENV);
     expect(res.status).toBe(500);
-    expect(await res.json()).toEqual({ error: "Internal Server Error" });
+    expect(await res.json()).toEqual({
+      error:
+        "DATABASE_URL is not set. Locally `pnpm dev:api` uses PGlite; in the Worker set the Neon URL.",
+    });
   });
 });

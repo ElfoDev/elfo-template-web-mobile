@@ -12,6 +12,7 @@ export const LOCAL_DATA_DIR = "./.data/pglite";
 const DEV_AUTH_SECRET = "dev-only-secret-change-me-dev-only-secret-change-me";
 
 const BINDING_KEYS = [
+  "ENVIRONMENT",
   "CORS_ORIGINS",
   "TRUSTED_ORIGINS",
   "DATABASE_URL",
@@ -35,6 +36,8 @@ export function localBindings(): Bindings {
     const value = process.env[key]?.trim();
     if (value) env[key] = value;
   }
+  // This server is only for local development: enable the dev defaults (see `isDevelopment`).
+  env.ENVIRONMENT ??= "development";
   env.BETTER_AUTH_SECRET ??= DEV_AUTH_SECRET;
   return env;
 }
