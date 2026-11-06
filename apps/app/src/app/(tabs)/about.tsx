@@ -3,6 +3,8 @@ import { Platform, ScrollView, Text, View } from "react-native";
 const STACK = [
   { name: "App", detail: "Expo + Expo Router + NativeWind" },
   { name: "API", detail: "Hono no Cloudflare Workers" },
+  { name: "Banco", detail: "Neon (Postgres) + Drizzle; PGlite no dev local" },
+  { name: "Login", detail: "Better Auth: e-mail e senha, GitHub e Google opcionais" },
   { name: "Shared", detail: "Schemas zod e cliente tipado (Hono RPC)" },
 ];
 

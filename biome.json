@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/assets/expo.icon", "!**/*.gen.ts"]
+    "includes": ["**", "!**/assets/expo.icon", "!**/*.gen.ts", "!apps/api/drizzle"]
   },
   "formatter": {
     "enabled": true,

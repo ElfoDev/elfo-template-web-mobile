@@ -1,4 +1,4 @@
-import { resolveApiUrl } from "./api";
+import { resolveApiUrl } from "./api-url";
 
 describe("resolveApiUrl", () => {
   it("prefers EXPO_PUBLIC_API_URL and strips trailing slashes", () => {

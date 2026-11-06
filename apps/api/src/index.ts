@@ -1,5 +1,6 @@
-import app from "./app";
+import { createApp } from "./app";
 
 export type { AppType } from "./app";
 
-export default app;
+/** Worker entry: Neon from `DATABASE_URL` (see `wrangler.jsonc` and `.dev.vars.example`). */
+export default createApp();

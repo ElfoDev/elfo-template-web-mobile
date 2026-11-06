@@ -1,7 +1,9 @@
 import { healthResponseSchema } from "@repo/shared";
 import { testClient } from "hono/testing";
 import { describe, expect, it } from "vitest";
-import app from "./app";
+import { createApp } from "./app";
+
+const app = createApp();
 
 describe("GET /health", () => {
   it("returns ok with a valid body", async () => {
@@ -14,7 +16,7 @@ describe("GET /health", () => {
   });
 
   it("is reachable through the typed client", async () => {
-    const client = testClient(app, { CORS_ORIGINS: "*" });
+    const client = testClient(app, { ENVIRONMENT: "development" });
     const res = await client.health.$get();
 
     expect(res.status).toBe(200);
@@ -23,8 +25,12 @@ describe("GET /health", () => {
 });
 
 describe("CORS", () => {
-  it("allows any origin by default", async () => {
-    const res = await app.request("/health", { headers: { Origin: "http://localhost:8081" } });
+  it("allows any origin by default in development", async () => {
+    const res = await app.request(
+      "/health",
+      { headers: { Origin: "http://localhost:8081" } },
+      { ENVIRONMENT: "development" },
+    );
     expect(res.headers.get("access-control-allow-origin")).toBe("http://localhost:8081");
   });
 

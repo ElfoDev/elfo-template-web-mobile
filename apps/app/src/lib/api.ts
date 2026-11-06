@@ -1,48 +1,90 @@
-import { type HealthResponse, healthResponseSchema } from "@repo/shared";
+import {
+  type AuthProvidersResponse,
+  apiErrorSchema,
+  authProvidersResponseSchema,
+  type HealthResponse,
+  healthResponseSchema,
+  type Task,
+  taskListResponseSchema,
+  taskSchema,
+} from "@repo/shared";
 import { type ApiClient, createApiClient } from "@repo/shared/client";
-import Constants from "expo-constants";
 import { Platform } from "react-native";
+import { API_URL } from "./api-url";
+import { authHeaders } from "./auth-client";
 
-const API_DEV_PORT = 8787;
-
-type ResolveApiUrlInput = {
-  /** Value of `EXPO_PUBLIC_API_URL`, if set. */
-  envUrl?: string;
-  /** Metro host (`Constants.expoConfig.hostUri`), e.g. `192.168.0.10:8081`. */
-  hostUri?: string | null;
-  platform: typeof Platform.OS;
-};
+export { API_URL } from "./api-url";
 
 /**
- * Picks the API base URL.
- *
- * 1. `EXPO_PUBLIC_API_URL` always wins (set it for preview/production builds).
- * 2. In development, use the machine running Metro on port 8787, so simulators,
- *    emulators and Expo Go on the same network all reach `pnpm dev`.
- * 3. Last resort: the Android emulator alias for the host machine, or localhost.
+ * Typed API client. Authenticated routes need the session: the browser sends the cookie
+ * (`credentials: "include"`); native apps send the cookie stored by Better Auth as a header.
  */
-export function resolveApiUrl({ envUrl, hostUri, platform }: ResolveApiUrlInput): string {
-  const fromEnv = envUrl?.trim();
-  if (fromEnv) return fromEnv.replace(/\/+$/, "");
-
-  const host = hostUri?.split(":")[0];
-  if (host && platform !== "web") return `http://${host}:${API_DEV_PORT}`;
-
-  if (platform === "android") return `http://10.0.2.2:${API_DEV_PORT}`;
-  return `http://localhost:${API_DEV_PORT}`;
-}
-
-export const API_URL = resolveApiUrl({
-  // Must be read as `process.env.EXPO_PUBLIC_*` literally so Expo inlines it at build time.
-  envUrl: process.env.EXPO_PUBLIC_API_URL,
-  hostUri: Constants.expoConfig?.hostUri,
-  platform: Platform.OS,
+export const api: ApiClient = createApiClient(API_URL, {
+  init: { credentials: Platform.OS === "web" ? "include" : "omit" },
+  headers: authHeaders,
 });
 
-export const api: ApiClient = createApiClient(API_URL);
+/** Error with the HTTP status, so screens can tell "signed out" (401) from other failures. */
+export class ApiRequestError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+    this.name = "ApiRequestError";
+  }
+}
+
+async function errorFrom(res: {
+  status: number;
+  json(): Promise<unknown>;
+}): Promise<ApiRequestError> {
+  let message = `API respondeu ${res.status}`;
+  try {
+    const body = apiErrorSchema.safeParse(await res.json());
+    if (body.success) message = body.data.issues?.[0]?.message ?? body.data.error;
+  } catch {
+    // Not JSON: keep the generic message.
+  }
+  if (res.status === 401) message = "Sua sessão expirou. Entre de novo.";
+  return new ApiRequestError(message, res.status);
+}
 
 export async function fetchHealth(client: ApiClient = api): Promise<HealthResponse> {
   const res = await client.health.$get();
   if (!res.ok) throw new Error(`API respondeu ${res.status}`);
   return healthResponseSchema.parse(await res.json());
+}
+
+export async function fetchAuthProviders(client: ApiClient = api): Promise<AuthProvidersResponse> {
+  const res = await client.auth.providers.$get();
+  if (!res.ok) throw await errorFrom(res);
+  return authProvidersResponseSchema.parse(await res.json());
+}
+
+export async function fetchTasks(client: ApiClient = api): Promise<Task[]> {
+  const res = await client.tasks.$get();
+  if (!res.ok) throw await errorFrom(res);
+  return taskListResponseSchema.parse(await res.json()).tasks;
+}
+
+export async function createTask(title: string, client: ApiClient = api): Promise<Task> {
+  const res = await client.tasks.$post({ json: { title } });
+  if (!res.ok) throw await errorFrom(res);
+  return taskSchema.parse(await res.json());
+}
+
+export async function updateTask(
+  id: string,
+  changes: { title?: string; done?: boolean },
+  client: ApiClient = api,
+): Promise<Task> {
+  const res = await client.tasks[":id"].$patch({ param: { id }, json: changes });
+  if (!res.ok) throw await errorFrom(res);
+  return taskSchema.parse(await res.json());
+}
+
+export async function deleteTask(id: string, client: ApiClient = api): Promise<void> {
+  const res = await client.tasks[":id"].$delete({ param: { id } });
+  if (!res.ok) throw await errorFrom(res);
 }

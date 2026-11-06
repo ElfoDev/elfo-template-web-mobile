@@ -25,6 +25,9 @@ android/
 .dev.vars.*
 !.dev.vars.example
 
+# local database (PGlite, used by `pnpm dev:api` without DATABASE_URL)
+.data/
+
 # env files (never commit secrets)
 .env
 .env.*

@@ -1,9 +1,14 @@
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { Tabs } from "expo-router/tabs";
-import { type ColorValue, Image, type ImageSourcePropType } from "react-native";
+import type { ComponentProps } from "react";
+import type { ColorValue } from "react-native";
 
-function tabIcon(source: ImageSourcePropType) {
+type IconName = ComponentProps<typeof Ionicons>["name"];
+
+function tabIcon(name: IconName) {
   return ({ color, size }: { color: ColorValue; size: number }) => (
-    <Image source={source} style={{ width: size, height: size, tintColor: color }} />
+    // React Navigation passes plain color strings.
+    <Ionicons name={name} size={size} color={typeof color === "string" ? color : undefined} />
   );
 }
 
@@ -12,17 +17,19 @@ export default function TabsLayout() {
     <Tabs>
       <Tabs.Screen
         name="index"
-        options={{
-          title: "Início",
-          tabBarIcon: tabIcon(require("../../../assets/images/tabIcons/home.png")),
-        }}
+        options={{ title: "Início", tabBarIcon: tabIcon("home-outline") }}
+      />
+      <Tabs.Screen
+        name="tasks"
+        options={{ title: "Tarefas", tabBarIcon: tabIcon("checkbox-outline") }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{ title: "Perfil", tabBarIcon: tabIcon("person-circle-outline") }}
       />
       <Tabs.Screen
         name="about"
-        options={{
-          title: "Sobre",
-          tabBarIcon: tabIcon(require("../../../assets/images/tabIcons/explore.png")),
-        }}
+        options={{ title: "Sobre", tabBarIcon: tabIcon("information-circle-outline") }}
       />
     </Tabs>
   );

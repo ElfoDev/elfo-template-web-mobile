@@ -3,7 +3,7 @@
 Template Foreman de produto **web + mobile**: um único app **Expo** (iOS, Android e Web) e uma API **Hono** no **Cloudflare Workers**, tudo em TypeScript, com tipos e schemas compartilhados.
 
 - `apps/app`: Expo + Expo Router + NativeWind
-- `apps/api`: Hono no Worker
+- `apps/api`: Hono no Worker, Postgres (Neon) com Drizzle e login com Better Auth
 - `packages/shared`: schemas zod e cliente tipado (Hono RPC)
 
 Detalhes de stack, convenções e fluxo de trabalho: [CLAUDE.md](./CLAUDE.md).
@@ -31,7 +31,28 @@ No terminal do Expo:
 - **Emulador Android**: aperte `a` (com um emulador do Android Studio aberto).
 - **Celular (Expo Go)**: escaneie o QR code com a câmera (iOS) ou com o Expo Go (Android). O celular precisa estar na mesma rede Wi-Fi do computador.
 
-A tela inicial chama `GET /health` e mostra se a API está online.
+O app abre na tela de **entrar**. Crie uma conta em **Cadastre-se** (e-mail e senha) e use a aba **Tarefas** (criar, concluir, apagar). Cada usuário só vê as próprias tarefas. A aba **Perfil** mostra o usuário e tem o botão **Sair**.
+
+### Banco e login em desenvolvimento
+
+Não precisa de conta nem de Docker: sem `DATABASE_URL`, o `pnpm dev:api` usa **PGlite** (Postgres em WASM) salvo em `apps/api/.data/pglite` e aplica as migrations ao subir. Para zerar, apague `apps/api/.data/`.
+
+Para usar Neon (ou configurar login social), copie `apps/api/.dev.vars.example` para `apps/api/.dev.vars` e preencha:
+
+- `DATABASE_URL`: connection string do Neon. Depois rode `pnpm db:migrate`.
+- `BETTER_AUTH_SECRET`: obrigatório fora do dev local (`openssl rand -base64 32`).
+- `GITHUB_CLIENT_ID`/`GITHUB_CLIENT_SECRET` e `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`: opcionais. Cada botão aparece no app só quando o par está definido. Callback: `<URL da API>/api/auth/callback/<github|google>`.
+- `ENVIRONMENT=development`: liga os defaults locais (já vem no `.dev.vars.example`; o `pnpm dev:api` define sozinho). Em produção **não** defina: a API falha fechado e exige `TRUSTED_ORIGINS` e `BETTER_AUTH_URL` (sem eles responde 500 dizendo o que falta).
+- `TRUSTED_ORIGINS`: origens aceitas pelo login. Em dev o padrão é `http://localhost:8081`, `foremanapp://` e `exp://`; em produção é obrigatório. Se abrir o app web por IP da rede (ex.: `http://192.168.0.10:8081`), adicione essa URL.
+
+No web a sessão fica num cookie HTTP-only; no iOS/Android (inclusive Expo Go), no `expo-secure-store`.
+
+### Banco: schema e migrations
+
+```sh
+pnpm db:generate   # gera a migration em apps/api/drizzle/ a partir de apps/api/src/db/schema.ts
+pnpm db:migrate    # aplica no Neon (DATABASE_URL) ou no PGlite local
+```
 
 ### URL da API
 
