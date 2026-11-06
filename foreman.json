@@ -8,5 +8,31 @@
     "workflow": "deploy.yml",
     "database": "neon"
   },
-  "secrets": []
+  "secrets": [
+    {
+      "name": "BETTER_AUTH_SECRET",
+      "description": "Assina cookies e tokens do Better Auth (API).",
+      "generate": true
+    },
+    {
+      "name": "GITHUB_CLIENT_ID",
+      "description": "Login com GitHub (opcional). Callback: <API>/api/auth/callback/github",
+      "optional": true
+    },
+    {
+      "name": "GITHUB_CLIENT_SECRET",
+      "description": "Login com GitHub (opcional).",
+      "optional": true
+    },
+    {
+      "name": "GOOGLE_CLIENT_ID",
+      "description": "Login com Google (opcional). Callback: <API>/api/auth/callback/google",
+      "optional": true
+    },
+    {
+      "name": "GOOGLE_CLIENT_SECRET",
+      "description": "Login com Google (opcional).",
+      "optional": true
+    }
+  ]
 }
