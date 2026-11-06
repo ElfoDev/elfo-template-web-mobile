@@ -35,6 +35,15 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      # Jest transform cache for apps/app (cacheDirectory in its jest config). A cold run
+      # transforms React Native + Expo Router with Babel (~25s); warm it is ~3s. Keyed on
+      # everything that changes the transformed output, so stale entries never pile up.
+      - name: Restore Jest cache
+        uses: actions/cache@v6
+        with:
+          path: apps/app/node_modules/.cache/jest
+          key: jest-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'apps/app/package.json', 'apps/app/babel.config.js', 'apps/app/tailwind.config.js') }}
+
       - name: Check (lint + typecheck + test)
         run: pnpm check
 

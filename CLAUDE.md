@@ -63,6 +63,7 @@ packages/
 - **Dependências do app**: instale com `pnpm --filter @repo/app exec expo install <pacote>` (escolhe versões compatíveis com o SDK). Libs com código nativo fora do Expo Go exigem development build.
 - **Expo muda a cada SDK**: antes de usar uma API do Expo/React Native, confira a doc da versão instalada (`https://docs.expo.dev/versions/v58.0.0/`) em vez de confiar na memória.
 - Testing Library v14: `render`, `fireEvent`, `userEvent` e `renderRouter` são **async**; sempre use `await`.
+- Jest do app (`jest` em `apps/app/package.json`): `testTimeout` de 30s global, porque o primeiro teste de cada arquivo paga a transformação fria do React Native/Expo Router. Não ajuste timeout teste a teste. O cache de transformação fica em `apps/app/node_modules/.cache/jest` e o CI o restaura com `actions/cache`.
 
 ## Como adicionar uma feature de ponta a ponta
 
