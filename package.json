@@ -1,0 +1,23 @@
+{
+  "name": "foreman-template-web-mobile",
+  "private": true,
+  "packageManager": "pnpm@12.18.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @repo/api --filter @repo/app dev",
+    "dev:api": "pnpm --filter @repo/api dev",
+    "dev:app": "pnpm --filter @repo/app dev",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "typecheck": "pnpm -r --no-sort typecheck",
+    "test": "pnpm -r --no-sort test",
+    "build": "pnpm -r --no-sort build",
+    "check": "pnpm lint && pnpm typecheck && pnpm test"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.5",
+    "typescript": "~6.0.3"
+  }
+}

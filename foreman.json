@@ -1,0 +1,12 @@
+{
+  "template": "web-mobile",
+  "commands": {
+    "check": "pnpm check"
+  },
+  "deploy": {
+    "provider": "cloudflare",
+    "workflow": "deploy.yml",
+    "database": "neon"
+  },
+  "secrets": []
+}

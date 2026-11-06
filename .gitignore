@@ -1,0 +1,36 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+coverage/
+*.tsbuildinfo
+
+# expo
+.expo/
+expo-env.d.ts
+web-build/
+ios/
+android/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# cloudflare / wrangler
+.wrangler/
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
+# env files (never commit secrets)
+.env
+.env.*
+!.env.example
+
+# misc
+.DS_Store
+*.log
+*.pem

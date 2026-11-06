@@ -1,0 +1,15 @@
+packages:
+  - apps/*
+  - packages/*
+
+# packages/shared imports the API route types (type-only) to build the Hono RPC client,
+# and the API imports the zod schemas from packages/shared. The cycle is intentional
+# (nothing is built before use), so root scripts run `pnpm -r --no-sort`.
+ignoreWorkspaceCycles: true
+
+# Dependencies allowed to run install scripts (pnpm blocks all others).
+allowBuilds:
+  esbuild: true
+  workerd: true
+  # Ships prebuilt binaries; its install script only builds from source as a fallback.
+  "@parcel/watcher": false

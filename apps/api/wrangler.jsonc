@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "foreman-template-web-mobile-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-11-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+  // Non-secret config only. Secrets go in `.dev.vars` locally and `wrangler secret put` in prod.
+  "vars": {
+    // Comma-separated list of allowed browser origins. "*" allows any origin.
+    "CORS_ORIGINS": "*"
+  }
+}
