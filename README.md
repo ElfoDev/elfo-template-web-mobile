@@ -89,12 +89,26 @@ Cloudflare Workers + Neon Postgres, por `.github/workflows/deploy.yml`.
 | -------------------- | ----------------- | ---------------- | ------------------------ |
 | `production`         | `production`      | `<repo>`         | branch padrão do projeto |
 | `staging` (opcional) | `staging`         | `<repo>-staging` | branch `staging`         |
+| PR aberto (preview)  | `preview-pr-<n>`  | `<repo>-pr-<n>`  | branch `preview/pr-<n>`  |
 
 - **Staging é opcional.** Sem a branch `staging` nada publica lá. Com ela (o Elfo cria quando você marca _Staging_), os PRs vão para `staging`, cada push publica o Worker de staging, e promover para produção é um PR para `production`. No primeiro deploy de staging o workflow cria a branch `staging` no Neon a partir da branch padrão: ela começa como uma cópia do banco de produção daquele momento.
 - **Um Worker por ambiente** serve o app web na raiz e a API em `/api`: `https://<repo>.<sua-conta>.workers.dev`. O login funciona de cara: a API usa a origem do próprio request como URL pública e origem confiável (a Cloudflare só entrega a este Worker os hostnames ligados a ele), e confia também no scheme do app (`foremanapp://`). `BETTER_AUTH_URL` e `TRUSTED_ORIGINS` são opcionais (veja `apps/api/wrangler.jsonc`).
 - **Cada deploy**: `pnpm check`, `pnpm build`, migrations no banco do ambiente (antes da nova versão entrar no ar, por isso precisam ser compatíveis com a versão anterior), `wrangler deploy` com os secrets do app e um smoke test (`/` e `/api/health/db` respondendo 200). A URL aparece no resumo do run e no environment do GitHub.
-- **Secrets** (o Elfo grava): `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `DATABASE_URL` (direta, para migrations), `DATABASE_URL_POOLED` (o Worker usa), `NEON_API_KEY` e `NEON_PROJECT_ID` (staging), e os do app listados em `foreman.json` (`BETTER_AUTH_SECRET`, OAuth opcionais). Para um secret novo no Worker, declare-o em `foreman.json` e passe-o pelo nome no passo "Worker secrets" de `.github/workflows/deploy.yml` (nunca todos os secrets de uma vez: o GitHub segura esse deploy em repositórios públicos).
-- **Nome do Worker**: o do repositório. Para outro, crie a variável `CLOUDFLARE_WORKER_NAME` (Settings → Secrets and variables → Actions → Variables); staging vira `<nome>-staging`.
+- **Secrets** (o Elfo grava): `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `DATABASE_URL` (direta, para migrations), `DATABASE_URL_POOLED` (o Worker usa), `NEON_API_KEY` e `NEON_PROJECT_ID` (staging e previews), e os do app listados em `foreman.json` (`BETTER_AUTH_SECRET`, OAuth opcionais). Para um secret novo no Worker, declare-o em `foreman.json` e passe-o pelo nome no passo "Worker secrets" de `.github/workflows/deploy.yml` e de `.github/workflows/preview.yml` (nunca todos os secrets de uma vez: o GitHub segura esse deploy em repositórios públicos).
+- **Nome do Worker**: o do repositório. Para outro, crie a variável `CLOUDFLARE_WORKER_NAME` (Settings → Secrets and variables → Actions → Variables); staging vira `<nome>-staging` e o preview de um PR, `<nome>-pr-<n>`.
+
+### Preview por PR
+
+Todo PR para `production` ou `staging` ganha um ambiente só dele, publicado a cada push por `.github/workflows/preview.yml`:
+
+- **Worker `<repo>-pr-<n>`** com o código do PR, servindo o app web e a API como em produção, em `https://<repo>-pr-<n>.<sua-conta>.workers.dev` (só workers.dev, sem domínio próprio).
+- **Banco próprio**: a branch `preview/pr-<n>` do Neon, criada no primeiro preview do PR como cópia da branch `staging` (se existir) ou da branch padrão (produção). Os pushes seguintes mantêm os dados dela e só aplicam as migrations novas. Nada do que se faz no preview chega a staging ou produção.
+- **A URL** fica num comentário do PR (o mesmo comentário, atualizado a cada push), no resumo do run, no environment `preview-pr-<n>` do GitHub e **no card do Elfo**.
+- **App iOS/Android contra o preview**: aponte o app para a URL do preview com `EXPO_PUBLIC_API_URL=<URL do preview>` em `apps/app/.env.local` e teste num development build ([veja abaixo](#app-iosandroid-contra-a-api-publicada)).
+- **Ao fechar o PR** (com ou sem merge) o workflow apaga o Worker e a branch do Neon do preview. Só esses nomes exatos: nunca o Worker de produção ou de staging, nem as branches padrão, protegidas, `production` ou `staging` do Neon.
+- **Custo**: um Worker e uma branch do Neon (com o seu compute, que hiberna quando ninguém usa) para cada PR aberto, apagados quando o PR fecha. O plano do Neon limita quantas branches o projeto pode ter (o gratuito permite poucas) e conta as horas de compute de todas elas; a conta da Cloudflare também tem um limite de Workers. No limite, o preview falha dizendo o motivo: feche PRs antigos ou apague branches que sobraram.
+- **Precisa** dos secrets da Cloudflare e do Neon (`NEON_API_KEY`, `NEON_PROJECT_ID`), que o Elfo grava em **Settings → Deploy**. Sem eles o preview é pulado (o run passa) e o comentário do PR diz o que conectar. PRs de forks e do Dependabot não têm preview (não recebem secrets).
+- O preview não roda `pnpm check` (o CI do PR já roda): build, banco, migrations, `wrangler deploy` e o mesmo smoke test do deploy. Login com GitHub/Google não funciona no preview (os callbacks do OAuth são cadastrados para a URL de produção); e-mail e senha funcionam.
 
 ### Domínio próprio
 
@@ -111,7 +125,7 @@ O deploy liga o domínio ao Worker (e substitui um registro DNS que já exista p
 
 Builds nativos (EAS) ficam fora deste template. Para usar a API publicada no simulador, emulador ou celular:
 
-1. Em `apps/app/.env.local`: `EXPO_PUBLIC_API_URL=https://<repo>.<sua-conta>.workers.dev` (a URL do resumo do deploy).
+1. Em `apps/app/.env.local`: `EXPO_PUBLIC_API_URL=https://<repo>.<sua-conta>.workers.dev` (a URL do resumo do deploy; para testar um PR, a URL do preview dele).
 2. Use um **development build** (`pnpm --filter @repo/app exec expo run:ios` / `run:android`, ou um build de desenvolvimento do EAS): ele faz login pelo scheme do app (`foremanapp://`), que a API publicada aceita. O **Expo Go** (`exp://`) só faz login na API local: fora do dev a API não confia em `exp://`, porque depois de um login social o Better Auth manda a sessão para esse link, e `exp://<qualquer host>` não é do app.
 3. Num build da loja, defina `EXPO_PUBLIC_API_URL` nas variáveis do EAS.
 
