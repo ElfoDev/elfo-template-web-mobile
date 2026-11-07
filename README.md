@@ -41,7 +41,7 @@ Para usar Neon (ou configurar login social), copie `apps/api/.dev.vars.example` 
 
 - `DATABASE_URL`: connection string do Neon. Depois rode `pnpm db:migrate`.
 - `BETTER_AUTH_SECRET`: obrigatório fora do dev local (`openssl rand -base64 32`).
-- `GITHUB_CLIENT_ID`/`GITHUB_CLIENT_SECRET` e `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`: opcionais. Cada botão aparece no app só quando o par está definido. Callback: `<URL da API>/api/auth/callback/<github|google>`.
+- `OAUTH_GITHUB_CLIENT_ID`/`OAUTH_GITHUB_CLIENT_SECRET` e `OAUTH_GOOGLE_CLIENT_ID`/`OAUTH_GOOGLE_CLIENT_SECRET`: opcionais. Cada botão aparece no app só quando o par está definido. Callback: `<URL da API>/api/auth/callback/<github|google>`.
 - `ENVIRONMENT=development`: liga os defaults locais (já vem no `.dev.vars.example`; o `pnpm dev:api` define sozinho). Em produção **não** defina: a API falha fechado e exige `TRUSTED_ORIGINS` e `BETTER_AUTH_URL` (sem eles responde 500 dizendo o que falta).
 - `TRUSTED_ORIGINS`: origens aceitas pelo login. Em dev o padrão é `http://localhost:8081`, `foremanapp://` e `exp://`; em produção é obrigatório. Se abrir o app web por IP da rede (ex.: `http://192.168.0.10:8081`), adicione essa URL.
 

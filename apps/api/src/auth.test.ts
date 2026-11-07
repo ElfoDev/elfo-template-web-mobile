@@ -117,9 +117,9 @@ describe("GET /auth/providers", () => {
       {},
       {
         ...TEST_ENV,
-        GITHUB_CLIENT_ID: "id",
-        GITHUB_CLIENT_SECRET: "secret",
-        GOOGLE_CLIENT_ID: "id-without-secret",
+        OAUTH_GITHUB_CLIENT_ID: "id",
+        OAUTH_GITHUB_CLIENT_SECRET: "secret",
+        OAUTH_GOOGLE_CLIENT_ID: "id-without-secret",
       },
     );
     expect(authProvidersResponseSchema.parse(await res.json()).social).toEqual(["github"]);

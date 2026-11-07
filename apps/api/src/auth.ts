@@ -47,11 +47,11 @@ export function authBaseURL(env: Bindings, requestUrl: string): string {
 
 function socialProviders(env: Bindings) {
   return {
-    ...(env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET
-      ? { github: { clientId: env.GITHUB_CLIENT_ID, clientSecret: env.GITHUB_CLIENT_SECRET } }
+    ...(env.OAUTH_GITHUB_CLIENT_ID && env.OAUTH_GITHUB_CLIENT_SECRET
+      ? { github: { clientId: env.OAUTH_GITHUB_CLIENT_ID, clientSecret: env.OAUTH_GITHUB_CLIENT_SECRET } }
       : {}),
-    ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
-      ? { google: { clientId: env.GOOGLE_CLIENT_ID, clientSecret: env.GOOGLE_CLIENT_SECRET } }
+    ...(env.OAUTH_GOOGLE_CLIENT_ID && env.OAUTH_GOOGLE_CLIENT_SECRET
+      ? { google: { clientId: env.OAUTH_GOOGLE_CLIENT_ID, clientSecret: env.OAUTH_GOOGLE_CLIENT_SECRET } }
       : {}),
   };
 }
@@ -59,8 +59,8 @@ function socialProviders(env: Bindings) {
 /** OAuth providers enabled by the environment (both client id and secret set). */
 export function enabledSocialProviders(env: Bindings): SocialProvider[] {
   const enabled: SocialProvider[] = [];
-  if (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET) enabled.push("github");
-  if (env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) enabled.push("google");
+  if (env.OAUTH_GITHUB_CLIENT_ID && env.OAUTH_GITHUB_CLIENT_SECRET) enabled.push("github");
+  if (env.OAUTH_GOOGLE_CLIENT_ID && env.OAUTH_GOOGLE_CLIENT_SECRET) enabled.push("google");
   return enabled;
 }
 

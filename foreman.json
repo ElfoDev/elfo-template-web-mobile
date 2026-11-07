@@ -15,22 +15,22 @@
       "generate": true
     },
     {
-      "name": "GITHUB_CLIENT_ID",
+      "name": "OAUTH_GITHUB_CLIENT_ID",
       "description": "Login com GitHub (opcional). Callback: <API>/api/auth/callback/github",
       "optional": true
     },
     {
-      "name": "GITHUB_CLIENT_SECRET",
+      "name": "OAUTH_GITHUB_CLIENT_SECRET",
       "description": "Login com GitHub (opcional).",
       "optional": true
     },
     {
-      "name": "GOOGLE_CLIENT_ID",
+      "name": "OAUTH_GOOGLE_CLIENT_ID",
       "description": "Login com Google (opcional). Callback: <API>/api/auth/callback/google",
       "optional": true
     },
     {
-      "name": "GOOGLE_CLIENT_SECRET",
+      "name": "OAUTH_GOOGLE_CLIENT_SECRET",
       "description": "Login com Google (opcional).",
       "optional": true
     }

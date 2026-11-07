@@ -19,7 +19,7 @@ ENVIRONMENT=development
 # TRUSTED_ORIGINS=http://localhost:8081,foremanapp://,exp://
 
 # Optional OAuth. Callback URLs: <API URL>/api/auth/callback/github and .../callback/google
-# GITHUB_CLIENT_ID=
-# GITHUB_CLIENT_SECRET=
-# GOOGLE_CLIENT_ID=
-# GOOGLE_CLIENT_SECRET=
+# OAUTH_GITHUB_CLIENT_ID=
+# OAUTH_GITHUB_CLIENT_SECRET=
+# OAUTH_GOOGLE_CLIENT_ID=
+# OAUTH_GOOGLE_CLIENT_SECRET=
