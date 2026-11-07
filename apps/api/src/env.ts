@@ -15,15 +15,23 @@ export type Bindings = {
    */
   ENVIRONMENT?: string;
   /**
+   * The web app (Expo web export of `apps/app`), bundled as the Worker's static assets
+   * (`assets` in `wrangler.jsonc`). Requests outside `/api` that match no file land here.
+   * Absent in tests and in the local Node dev server.
+   */
+  ASSETS?: StaticAssets;
+  /**
    * Comma-separated list of browser origins allowed by CORS. Must be an explicit list in
    * production (credentials are involved); unset means no cross-origin access there.
    * "*" is accepted in development only.
    */
   CORS_ORIGINS?: string;
   /**
-   * Comma-separated origins Better Auth trusts (CSRF checks, redirects) and that may send
-   * cookies to the API from a browser. Required outside development; in development it
-   * defaults to `DEVELOPMENT_TRUSTED_ORIGINS` in `auth.ts`.
+   * Extra comma-separated origins Better Auth trusts (CSRF checks, redirects) and that may send
+   * cookies to the API from another browser origin. Outside development the API's own origin
+   * and the app scheme are always trusted (see `trustedOrigins` in `auth.ts`), so this is only
+   * needed for a web app on another origin. In development it defaults to
+   * `DEVELOPMENT_TRUSTED_ORIGINS`.
    */
   TRUSTED_ORIGINS?: string;
   /** Neon connection string. Required in the Worker; the local dev server falls back to PGlite. */
@@ -31,8 +39,8 @@ export type Bindings = {
   /** Secret used to sign cookies and tokens (secret, at least 32 chars). */
   BETTER_AUTH_SECRET?: string;
   /**
-   * Public URL of the API. Required outside development; in development it defaults to the
-   * origin of the incoming request.
+   * Public URL of the API (OAuth callbacks). Optional: by default it is the origin the request
+   * came in on (the workers.dev URL or a custom domain). Set it to pin one URL.
    */
   BETTER_AUTH_URL?: string;
   /** OAuth (optional): a provider is enabled only when both its id and secret are set. */
@@ -40,6 +48,11 @@ export type Bindings = {
   OAUTH_GITHUB_CLIENT_SECRET?: string;
   OAUTH_GOOGLE_CLIENT_ID?: string;
   OAUTH_GOOGLE_CLIENT_SECRET?: string;
+};
+
+/** The `ASSETS` binding (a Workers `Fetcher`), typed without the Worker globals. */
+export type StaticAssets = {
+  fetch(request: Request): Promise<Response>;
 };
 
 export type Variables = {

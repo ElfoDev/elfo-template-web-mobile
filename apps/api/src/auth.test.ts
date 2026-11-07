@@ -89,22 +89,22 @@ describe("Better Auth (email + password)", () => {
 
 describe("CORS with credentials", () => {
   it("lets trusted web origins send cookies", async () => {
-    const res = await api.request("/health", { headers: { origin: WEB_ORIGIN } });
+    const res = await api.request("/api/health", { headers: { origin: WEB_ORIGIN } });
     expect(res.headers.get("access-control-allow-origin")).toBe(WEB_ORIGIN);
     expect(res.headers.get("access-control-allow-credentials")).toBe("true");
   });
 
   it("does not let other origins send cookies, even with CORS_ORIGINS=*", async () => {
-    const res = await api.request("/health", { headers: { origin: "https://evil.example" } });
+    const res = await api.request("/api/health", { headers: { origin: "https://evil.example" } });
     expect(res.headers.get("access-control-allow-credentials")).toBeNull();
   });
 });
 
-describe("GET /auth/providers", () => {
+describe("GET /api/auth/providers", () => {
   const app = createApp();
 
   it("lists no OAuth provider by default", async () => {
-    const res = await app.request("/auth/providers", {}, TEST_ENV);
+    const res = await app.request("/api/auth/providers", {}, TEST_ENV);
     expect(authProvidersResponseSchema.parse(await res.json())).toEqual({
       emailAndPassword: true,
       social: [],
@@ -113,7 +113,7 @@ describe("GET /auth/providers", () => {
 
   it("enables a provider only when both id and secret are set", async () => {
     const res = await app.request(
-      "/auth/providers",
+      "/api/auth/providers",
       {},
       {
         ...TEST_ENV,
@@ -128,7 +128,7 @@ describe("GET /auth/providers", () => {
 
 describe("configuration errors", () => {
   it("answers 500 when the Worker has no DATABASE_URL", async () => {
-    const res = await createApp().request("/tasks", {}, TEST_ENV);
+    const res = await createApp().request("/api/tasks", {}, TEST_ENV);
     expect(res.status).toBe(500);
     expect(await res.json()).toEqual({
       error:

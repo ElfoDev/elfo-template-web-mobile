@@ -18,7 +18,7 @@ beforeEach(() => {
 });
 
 describe("HomeScreen", () => {
-  it("shows the API as online when /health answers ok", async () => {
+  it("shows the API as online when /api/health answers ok", async () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse({ status: "ok", service: "api", timestamp: new Date().toISOString() }),
     );
@@ -27,7 +27,7 @@ describe("HomeScreen", () => {
 
     expect(await screen.findByText("● Online")).toBeOnTheScreen();
     const [input] = fetchMock.mock.calls[0] ?? [];
-    expect(String(input instanceof Request ? input.url : input)).toMatch(/\/health$/);
+    expect(String(input instanceof Request ? input.url : input)).toMatch(/\/api\/health$/);
   });
 
   it("shows the error and retries", async () => {

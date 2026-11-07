@@ -1,27 +1,46 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "elfo-template-web-mobile-api",
+  // One Worker serves the whole product: the API under /api and the web app everywhere else.
+  // Deploys (.github/workflows/deploy.yml) name it after the repository (`<name>` in production,
+  // `<name>-staging` in staging); this name only applies to a manual `wrangler deploy`.
+  "name": "elfo-template-web-mobile",
   "main": "src/index.ts",
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat"],
   "observability": {
     "enabled": true
   },
-  // Non-secret config only. Secrets go in `.dev.vars` locally and `wrangler secret put` in prod:
-  //   DATABASE_URL (Neon), BETTER_AUTH_SECRET, and optionally
-  //   OAUTH_GITHUB_CLIENT_ID/OAUTH_GITHUB_CLIENT_SECRET, OAUTH_GOOGLE_CLIENT_ID/OAUTH_GOOGLE_CLIENT_SECRET.
+  // Public URL https://<name>.<account subdomain>.workers.dev. A custom domain is added by the
+  // deploy (CUSTOM_DOMAIN / STAGING_CUSTOM_DOMAIN variables, see README), not here, so that
+  // production and staging never claim the same domain.
+  "workers_dev": true,
+  // The web app: `expo export --platform web` of apps/app (run `pnpm build` first). Files are
+  // served as is (`/tasks` -> tasks.html); /api/* always runs the Worker, even if a file
+  // matched; any other miss gets 404.html (Expo's +not-found page, copied by the app build).
+  // Same origin as the API: no CORS, first-party session cookies.
+  "assets": {
+    "directory": "../app/dist",
+    "binding": "ASSETS",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*"]
+  },
+  // Non-secret config only. Secrets (DATABASE_URL, BETTER_AUTH_SECRET and the optional
+  // OAUTH_GITHUB_*/OAUTH_GOOGLE_*) go in `.dev.vars` locally; the deploy uploads them from the
+  // repository's GitHub secrets (`wrangler deploy --secrets-file`).
   //
-  // The API fails closed: without the vars below the auth routes answer 500 with a message
-  // naming the missing one. Do NOT set ENVIRONMENT here: "development" (only in `.dev.vars`)
-  // turns on local defaults (localhost origins, request-derived URL, no rate limit).
+  // Do NOT set ENVIRONMENT here: "development" (only in `.dev.vars`) turns on local defaults
+  // (localhost and Expo Go origins, CORS "*", no rate limit).
   "vars": {
-    // Required. Public URL of the API (OAuth callbacks, cookie scope):
-    // "BETTER_AUTH_URL": "https://api.example.com",
-    // Required. Origins Better Auth trusts and that may send the session cookie (web URL + app scheme):
-    // "TRUSTED_ORIGINS": "https://api.example.com,foremanapp://",
+    // Optional. Public URL used for OAuth callbacks. By default it is the origin of each request
+    // (workers.dev or the custom domain), which Cloudflare only routes to this Worker if bound:
+    // "BETTER_AUTH_URL": "https://app.example.com",
+    // Optional. Extra origins Better Auth trusts. The Worker's own origin and the app scheme
+    // (foremanapp://) are always trusted; add a web app hosted on another origin:
+    // "TRUSTED_ORIGINS": "https://web.example.com",
     // Only if a web app is served from ANOTHER origin than the API. Explicit list, never "*"
-    // (the API uses credentials). The web app is planned for the same origin as the API (APP-3),
-    // which needs no CORS at all. Unset = no cross-origin browser access.
-    // "CORS_ORIGINS": "https://app.example.com"
+    // (the API uses credentials). The bundled web app shares the API's origin and needs no CORS.
+    // Unset = no cross-origin access.
+    // "CORS_ORIGINS": "https://web.example.com"
   }
 }

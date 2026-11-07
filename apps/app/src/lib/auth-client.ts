@@ -24,7 +24,7 @@ export const authClient = createAuthClient({
 
 export type Session = typeof authClient.$Infer.Session;
 
-/** Headers that authenticate a request to our own API routes (e.g. `/tasks`). */
+/** Headers that authenticate a request to our own API routes (e.g. `/api/tasks`). */
 export async function authHeaders(): Promise<Record<string, string>> {
   if (Platform.OS === "web") return {};
   const cookie = await authClient.getCookie();

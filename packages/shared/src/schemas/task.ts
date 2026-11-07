@@ -20,21 +20,21 @@ export const taskSchema = z.object({
 
 export type Task = z.infer<typeof taskSchema>;
 
-/** Response body of `GET /tasks` (newest first). */
+/** Response body of `GET /api/tasks` (newest first). */
 export const taskListResponseSchema = z.object({
   tasks: z.array(taskSchema),
 });
 
 export type TaskListResponse = z.infer<typeof taskListResponseSchema>;
 
-/** Request body of `POST /tasks`. */
+/** Request body of `POST /api/tasks`. */
 export const createTaskSchema = z.object({
   title: taskTitleSchema,
 });
 
 export type CreateTaskInput = z.infer<typeof createTaskSchema>;
 
-/** Request body of `PATCH /tasks/:id`: at least one field. */
+/** Request body of `PATCH /api/tasks/:id`: at least one field. */
 export const updateTaskSchema = z
   .object({
     title: taskTitleSchema.optional(),
@@ -46,7 +46,7 @@ export const updateTaskSchema = z
 
 export type UpdateTaskInput = z.infer<typeof updateTaskSchema>;
 
-/** Path params of `/tasks/:id`. */
+/** Path params of `/api/tasks/:id`. */
 export const taskParamsSchema = z.object({
   id: z.uuid(),
 });

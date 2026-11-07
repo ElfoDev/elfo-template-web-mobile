@@ -7,7 +7,7 @@ export type HealthState =
   | { status: "ok"; data: HealthResponse }
   | { status: "error"; error: string };
 
-/** Calls `GET /health` on mount and exposes `refetch` for retries. */
+/** Calls `GET /api/health` on mount and exposes `refetch` for retries. */
 export function useHealth() {
   const [state, setState] = useState<HealthState>({ status: "loading" });
   const requestId = useRef(0);

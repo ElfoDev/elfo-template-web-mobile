@@ -31,7 +31,10 @@ describe("TasksScreen", () => {
 
     expect(await screen.findByText("Comprar pão")).toBeOnTheScreen();
     expect(screen.getByText("Pagar contas")).toBeOnTheScreen();
-    expect(fetchCall(0)).toMatchObject({ method: "GET", url: expect.stringMatching(/\/tasks$/) });
+    expect(fetchCall(0)).toMatchObject({
+      method: "GET",
+      url: expect.stringMatching(/\/api\/tasks$/),
+    });
   });
 
   it("shows an empty state", async () => {
@@ -100,7 +103,7 @@ describe("TasksScreen", () => {
     ).toBeTruthy();
     expect(fetchCall(1)).toMatchObject({
       method: "PATCH",
-      url: expect.stringMatching(new RegExp(`/tasks/${bread.id}$`)),
+      url: expect.stringMatching(new RegExp(`/api/tasks/${bread.id}$`)),
       body: { done: true },
     });
   });

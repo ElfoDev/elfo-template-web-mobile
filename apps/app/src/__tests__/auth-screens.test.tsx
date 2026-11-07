@@ -5,7 +5,7 @@ import { fetchMock, installFetchMock, jsonResponse } from "@/test-utils/fetch-mo
 
 beforeEach(() => {
   installFetchMock();
-  // `/auth/providers` (OAuth buttons) and `/health`: answer with the defaults.
+  // `/api/auth/providers` (OAuth buttons) and `/api/health`: answer with the defaults.
   fetchMock.mockImplementation(async (input) => {
     const url = String(input instanceof Request ? input.url : input);
     if (url.endsWith("/auth/providers")) {

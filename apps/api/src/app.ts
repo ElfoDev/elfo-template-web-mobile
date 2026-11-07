@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { AUTH_BASE_PATH, DEVELOPMENT_TRUSTED_ORIGINS } from "./auth";
+import { API_BASE_PATH, DEVELOPMENT_TRUSTED_ORIGINS } from "./auth";
 import { ConfigError, isDevelopment, parseList } from "./config";
 import type { Database } from "./db/client";
 import type { AppEnv, Bindings } from "./env";
@@ -40,8 +40,20 @@ export type AppOptions = {
   db?: Database;
 };
 
+/** True for `/api` and everything under it: the API. Everything else is the web app. */
+export function isApiPath(path: string): boolean {
+  return path === API_BASE_PATH || path.startsWith(`${API_BASE_PATH}/`);
+}
+
+/**
+ * The API, under `/api`. Deployed, the same Worker serves the web app (Expo web export) as
+ * static assets at every other path, so web and API share one origin: no CORS, first-party
+ * cookies. Paths that match a file never reach this code; other non-API paths fall through
+ * to the assets (their 404 page) in `notFound` below.
+ */
 export function createApp(options: AppOptions = {}) {
   const app = new Hono<AppEnv>()
+    .basePath(API_BASE_PATH)
     .use("*", (c, next) => {
       const env = c.env ?? {};
       return cors({
@@ -53,14 +65,19 @@ export function createApp(options: AppOptions = {}) {
       c.set("services", createServices(c.env ?? {}, c.req.url, options.db));
       await next();
     })
-    // Better Auth: sign-up, sign-in, sign-out, session, OAuth callbacks...
-    .on(["GET", "POST"], `${AUTH_BASE_PATH}/*`, (c) => c.var.services.auth.handler(c.req.raw))
     // Chain every route here so `AppType` carries the full route graph for the RPC client.
     .route("/health", healthRoutes)
+    // Before Better Auth's catch-all below: the first matching handler answers.
     .route("/auth/providers", authProviderRoutes)
+    // Better Auth (`AUTH_BASE_PATH`): sign-up, sign-in, sign-out, session, OAuth callbacks...
+    .on(["GET", "POST"], "/auth/*", (c) => c.var.services.auth.handler(c.req.raw))
     .route("/tasks", taskRoutes);
 
-  app.notFound((c) => c.json({ error: "Not Found" }, 404));
+  app.notFound((c) => {
+    const assets = c.env?.ASSETS;
+    if (assets && !isApiPath(c.req.path)) return assets.fetch(c.req.raw);
+    return c.json({ error: "Not Found" }, 404);
+  });
 
   app.onError((err, c) => {
     console.error(err);
