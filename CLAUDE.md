@@ -116,7 +116,7 @@ Exemplo: listar `todos`.
 
 ## Regras
 
-- **Nunca commite secrets.** Locais ficam em `apps/api/.dev.vars` e `apps/app/.env.local` (ambos ignorados pelo git). Publicados, são secrets do repositório no GitHub: declare o secret novo em `foreman.json` (`secrets[]`) e o deploy o põe no Worker. Nunca coloque secrets em `EXPO_PUBLIC_*` nem em `wrangler.jsonc`.
+- **Nunca commite secrets.** Locais ficam em `apps/api/.dev.vars` e `apps/app/.env.local` (ambos ignorados pelo git). Publicados, são secrets do repositório no GitHub: declare o secret novo em `foreman.json` (`secrets[]`) e passe-o pelo nome no passo "Worker secrets" do `deploy.yml`; o deploy o põe no Worker. Nunca coloque secrets em `EXPO_PUBLIC_*` nem em `wrangler.jsonc`.
 - **Migrations sempre geradas e commitadas** (`pnpm db:generate`). Não edite migrations já aplicadas.
 - **Nunca importe `src/db/pglite.ts` (nem nada de Node) a partir de `src/index.ts`/`src/app.ts`**: entraria no bundle do Worker.
 - **Mantenha `pnpm check` verde.** Não desligue regras do Biome, testes ou o strict do TypeScript para fazer passar.
@@ -129,4 +129,4 @@ Exemplo: listar `todos`.
 - `.github/workflows/deploy.yml`, a cada push nessas branches (ou `workflow_dispatch`, que o Elfo usa no primeiro deploy): `pnpm check`, `pnpm build`, migrations (`pnpm db:migrate` na conexão direta), `wrangler deploy --name <repo>[-staging]` com os secrets, smoke test em `/` e `/api/health/db`. GitHub environments `production`/`staging` com a URL publicada.
 - Banco: produção usa os secrets `DATABASE_URL` (direta) e `DATABASE_URL_POOLED` (o Worker); staging usa a branch `staging` do Neon, criada pelo workflow a partir da branch padrão.
 - **Migrations rodam antes da nova versão entrar no ar** e a versão anterior continua servindo até lá: toda migration precisa ser compatível com o código anterior (adicione antes, remova ou renomeie num PR seguinte).
-- Secrets do Worker = os de `foreman.json` `secrets[]` que existirem no repositório + `DATABASE_URL`. Secret novo: declare em `foreman.json` (nome só com letras, dígitos e `_`, sem começar com `GITHUB_`; nunca `CLOUDFLARE_*`, `NEON_*` ou `DATABASE_URL*`, que o Elfo grava sozinho).
+- Secrets do Worker = os de `foreman.json` `secrets[]` que existirem no repositório + `DATABASE_URL`. Secret novo: declare em `foreman.json` e passe pelo nome no passo "Worker secrets" do `deploy.yml` (nunca todos de uma vez: o GitHub segura o run em repositório público; nome só com letras, dígitos e `_`, sem começar com `GITHUB_`; nunca `CLOUDFLARE_*`, `NEON_*` ou `DATABASE_URL*`, que o Elfo grava sozinho).

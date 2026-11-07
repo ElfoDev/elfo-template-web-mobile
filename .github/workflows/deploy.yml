@@ -140,9 +140,15 @@ jobs:
           DATABASE_URL: ${{ steps.db.outputs.direct_url }}
         run: pnpm db:migrate
 
+      # Each app secret by name (the ones in foreman.json): never all secrets at once, which GitHub
+      # holds for approval in public repositories. A new app secret goes here and in foreman.json.
       - name: Worker secrets
         env:
-          SECRETS_JSON: ${{ toJSON(secrets) }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          OAUTH_GITHUB_CLIENT_ID: ${{ secrets.OAUTH_GITHUB_CLIENT_ID }}
+          OAUTH_GITHUB_CLIENT_SECRET: ${{ secrets.OAUTH_GITHUB_CLIENT_SECRET }}
+          OAUTH_GOOGLE_CLIENT_ID: ${{ secrets.OAUTH_GOOGLE_CLIENT_ID }}
+          OAUTH_GOOGLE_CLIENT_SECRET: ${{ secrets.OAUTH_GOOGLE_CLIENT_SECRET }}
           DATABASE_URL: ${{ steps.db.outputs.pooled_url }}
         run: .github/scripts/worker-secrets.sh foreman.json "$RUNNER_TEMP/worker-secrets.json"
 
