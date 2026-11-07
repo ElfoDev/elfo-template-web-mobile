@@ -39,7 +39,7 @@ apps/
   api/                    Hono no Cloudflare Workers
     src/app.ts            createApp(): middlewares + todas as rotas encadeadas sob /api; fora de /api, entrega aos assets (app web); exporta AppType
     src/index.ts          entry do Worker (createApp() com Neon)
-    src/routes/*.ts       uma sub-app Hono por recurso (health, health/db, tasks, auth-providers)
+    src/routes/*.ts       uma sub-app Hono por recurso (health, health/db, tasks, auth-providers, easter-egg)
     src/auth.ts           Better Auth (createAuth por request, trusted origins, rate limit, OAuth)
     src/config.ts         ConfigError (vira 500 com mensagem) e isDevelopment(env)
     src/services.ts       db + auth do request, criados sob demanda (c.var.services)
@@ -61,7 +61,7 @@ apps/
       (tabs)/             tabs (só com sessão): index = Início, tasks, profile, about
     src/__tests__/        testes de tela e de navegação (fora de src/app, que só tem rotas)
     src/components/       componentes de UI
-    src/hooks/            hooks (use-health, use-tasks, use-auth-providers)
+    src/hooks/            hooks (use-health, use-tasks, use-auth-providers, use-easter-egg)
     src/lib/api-url.ts    URL da API
     src/lib/api.ts        cliente tipado (com a sessão) + funções por rota
     src/lib/auth-client.ts  cliente do Better Auth (useSession, signIn, signOut...)

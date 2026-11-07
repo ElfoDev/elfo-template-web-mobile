@@ -9,6 +9,7 @@ export {
   signUpSchema,
   socialProviderSchema,
 } from "./schemas/auth";
+export { type EasterEggResponse, easterEggResponseSchema } from "./schemas/easter-egg";
 export { type ApiError, apiErrorSchema } from "./schemas/error";
 export {
   type DatabaseHealthResponse,

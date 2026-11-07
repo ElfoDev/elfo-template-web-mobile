@@ -2,6 +2,8 @@ import {
   type AuthProvidersResponse,
   apiErrorSchema,
   authProvidersResponseSchema,
+  type EasterEggResponse,
+  easterEggResponseSchema,
   type HealthResponse,
   healthResponseSchema,
   type Task,
@@ -54,6 +56,15 @@ export async function fetchHealth(client: ApiClient = api): Promise<HealthRespon
   const res = await client.health.$get();
   if (!res.ok) throw new Error(`API respondeu ${res.status}`);
   return healthResponseSchema.parse(await res.json());
+}
+
+export async function fetchEasterEgg(client: ApiClient = api): Promise<EasterEggResponse> {
+  const res = await client["easter-egg"].$get();
+  if (!res.ok) throw new Error(`API respondeu ${res.status}`);
+  const body = easterEggResponseSchema.safeParse(await res.json());
+  // Short message for the screen instead of zod's full issue list.
+  if (!body.success) throw new Error("resposta inválida da API");
+  return body.data;
 }
 
 export async function fetchAuthProviders(client: ApiClient = api): Promise<AuthProvidersResponse> {

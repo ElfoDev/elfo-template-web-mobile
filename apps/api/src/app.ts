@@ -5,6 +5,7 @@ import { ConfigError, isDevelopment, parseList } from "./config";
 import type { Database } from "./db/client";
 import type { AppEnv, Bindings } from "./env";
 import { authProviderRoutes } from "./routes/auth-providers";
+import { easterEggRoutes } from "./routes/easter-egg";
 import { healthRoutes } from "./routes/health";
 import { taskRoutes } from "./routes/tasks";
 import { createServices } from "./services";
@@ -71,7 +72,8 @@ export function createApp(options: AppOptions = {}) {
     .route("/auth/providers", authProviderRoutes)
     // Better Auth (`AUTH_BASE_PATH`): sign-up, sign-in, sign-out, session, OAuth callbacks...
     .on(["GET", "POST"], "/auth/*", (c) => c.var.services.auth.handler(c.req.raw))
-    .route("/tasks", taskRoutes);
+    .route("/tasks", taskRoutes)
+    .route("/easter-egg", easterEggRoutes);
 
   app.notFound((c) => {
     const assets = c.env?.ASSETS;
