@@ -18,10 +18,10 @@ const BINDING_KEYS = [
   "DATABASE_URL",
   "BETTER_AUTH_SECRET",
   "BETTER_AUTH_URL",
-  "GITHUB_CLIENT_ID",
-  "GITHUB_CLIENT_SECRET",
-  "GOOGLE_CLIENT_ID",
-  "GOOGLE_CLIENT_SECRET",
+  "OAUTH_GITHUB_CLIENT_ID",
+  "OAUTH_GITHUB_CLIENT_SECRET",
+  "OAUTH_GOOGLE_CLIENT_ID",
+  "OAUTH_GOOGLE_CLIENT_SECRET",
 ] as const satisfies readonly (keyof Bindings)[];
 
 /** Loads `.dev.vars` (same file `wrangler dev` reads) into `process.env`, if present. */

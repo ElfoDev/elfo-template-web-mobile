@@ -9,7 +9,7 @@
   },
   // Non-secret config only. Secrets go in `.dev.vars` locally and `wrangler secret put` in prod:
   //   DATABASE_URL (Neon), BETTER_AUTH_SECRET, and optionally
-  //   GITHUB_CLIENT_ID/GITHUB_CLIENT_SECRET, GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET.
+  //   OAUTH_GITHUB_CLIENT_ID/OAUTH_GITHUB_CLIENT_SECRET, OAUTH_GOOGLE_CLIENT_ID/OAUTH_GOOGLE_CLIENT_SECRET.
   //
   // The API fails closed: without the vars below the auth routes answer 500 with a message
   // naming the missing one. Do NOT set ENVIRONMENT here: "development" (only in `.dev.vars`)
