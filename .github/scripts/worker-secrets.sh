@@ -4,7 +4,7 @@
 #     OAUTH_*...). Required ones must be set; optional ones are left out when empty.
 #   - DATABASE_URL: this environment's pooled connection string.
 # A new app secret goes in foreman.json (Elfo writes it to the repository) and is passed by name
-# in deploy.yml's "Worker secrets" step. Secrets left out of the file keep their previous value.
+# in the "Worker secrets" step of deploy.yml and of preview.yml. Secrets left out of the file keep their previous value.
 # Never hand every secret to a script at once: GitHub holds such runs in public repositories.
 #
 # Usage: worker-secrets.sh <foreman.json> <out.json>

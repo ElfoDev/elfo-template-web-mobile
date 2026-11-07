@@ -12,7 +12,7 @@ Guia para agents (e humanos) trabalhando neste repo. Leia antes de mudar código
 - **`packages/shared`**: schemas **zod**, tipos e o cliente tipado da API via **Hono RPC** (`hc<AppType>`).
 - Qualidade: **Biome** (lint + format), **Vitest** (api e shared), **jest-expo + Testing Library** (app), `expo export --platform web` no build e `expo-doctor` no CI.
 - Login no app: `better-auth/react` + `expoClient` (sessão no `expo-secure-store` no iOS/Android, cookie HTTP-only no web).
-- Deploy: **Cloudflare Workers + Neon** por `.github/workflows/deploy.yml` (branch `production` → produção, `staging` opcional → staging). Veja "Deploy" abaixo e no README.
+- Deploy: **Cloudflare Workers + Neon** por `.github/workflows/deploy.yml` (branch `production` → produção, `staging` opcional → staging) e um preview por PR (`.github/workflows/preview.yml`: Worker e branch do Neon próprios, apagados quando o PR fecha). Veja "Deploy" abaixo e no README.
 
 ## Comandos (na raiz)
 
@@ -74,7 +74,8 @@ packages/
 .github/
   workflows/ci.yml        PRs e pushes em production/staging: check, build, expo-doctor
   workflows/deploy.yml    deploy por ambiente (production/staging): check, build, migrations, wrangler deploy, smoke test
-  scripts/                usados pelo deploy (alvo, nome do Worker, banco/Neon, secrets do Worker, smoke test)
+  workflows/preview.yml   preview por PR (Worker <nome>-pr-<n> + branch preview/pr-<n> do Neon), apagado quando o PR fecha
+  scripts/                usados pelo deploy e pelo preview (alvo, nome do Worker, banco/Neon, secrets do Worker, smoke test, teardown, comentário no PR)
 foreman.json              template do Elfo: comandos, deploy e secrets do app (o deploy os põe no Worker)
 ```
 
@@ -116,7 +117,7 @@ Exemplo: listar `todos`.
 
 ## Regras
 
-- **Nunca commite secrets.** Locais ficam em `apps/api/.dev.vars` e `apps/app/.env.local` (ambos ignorados pelo git). Publicados, são secrets do repositório no GitHub: declare o secret novo em `foreman.json` (`secrets[]`) e passe-o pelo nome no passo "Worker secrets" do `deploy.yml`; o deploy o põe no Worker. Nunca coloque secrets em `EXPO_PUBLIC_*` nem em `wrangler.jsonc`.
+- **Nunca commite secrets.** Locais ficam em `apps/api/.dev.vars` e `apps/app/.env.local` (ambos ignorados pelo git). Publicados, são secrets do repositório no GitHub: declare o secret novo em `foreman.json` (`secrets[]`) e passe-o pelo nome no passo "Worker secrets" do `deploy.yml` e do `preview.yml`; o deploy o põe no Worker. Nunca coloque secrets em `EXPO_PUBLIC_*` nem em `wrangler.jsonc`.
 - **Migrations sempre geradas e commitadas** (`pnpm db:generate`). Não edite migrations já aplicadas.
 - **Nunca importe `src/db/pglite.ts` (nem nada de Node) a partir de `src/index.ts`/`src/app.ts`**: entraria no bundle do Worker.
 - **Mantenha `pnpm check` verde.** Não desligue regras do Biome, testes ou o strict do TypeScript para fazer passar.
@@ -128,5 +129,6 @@ Exemplo: listar `todos`.
 - Branches: **`production`** publica produção; **`staging`** (opcional) publica staging. Com `staging`, abra os PRs para `staging`; promover é um PR para `production`. Não existe `main`.
 - `.github/workflows/deploy.yml`, a cada push nessas branches (ou `workflow_dispatch`, que o Elfo usa no primeiro deploy): `pnpm check`, `pnpm build`, migrations (`pnpm db:migrate` na conexão direta), `wrangler deploy --name <repo>[-staging]` com os secrets, smoke test em `/` e `/api/health/db`. GitHub environments `production`/`staging` com a URL publicada.
 - Banco: produção usa os secrets `DATABASE_URL` (direta) e `DATABASE_URL_POOLED` (o Worker); staging usa a branch `staging` do Neon, criada pelo workflow a partir da branch padrão.
+- **Preview por PR** (`.github/workflows/preview.yml`, PRs para `production`/`staging` do próprio repositório): a cada push, `pnpm build`, a branch `preview/pr-<n>` do Neon (criada no 1º preview como cópia de `staging`, ou da branch padrão sem staging; depois mantém os dados), migrations nela, `wrangler deploy --name <nome>-pr-<n>` (só workers.dev) com os mesmos secrets do app e smoke test. A URL vai num comentário do PR (atualizado no lugar), no environment `preview-pr-<n>` (que o Elfo lê para mostrar no card) e no resumo. Para testar o app iOS/Android contra o preview: `EXPO_PUBLIC_API_URL=<URL do preview>`. Ao fechar o PR, o job de teardown apaga esse Worker e essa branch (só esses nomes; nunca produção/staging/branch padrão ou protegida). Custo: um Worker + uma branch do Neon por PR aberto (limites de branches do plano do Neon valem). Sem os secrets da Cloudflare ou do Neon o preview é pulado, sem falhar, e o comentário do PR pede para conectar no Elfo (Board → Settings → Deploy). As migrations de um PR rodam só na branch dele, então um preview pode testar uma migration antes de staging/produção.
 - **Migrations rodam antes da nova versão entrar no ar** e a versão anterior continua servindo até lá: toda migration precisa ser compatível com o código anterior (adicione antes, remova ou renomeie num PR seguinte).
-- Secrets do Worker = os de `foreman.json` `secrets[]` que existirem no repositório + `DATABASE_URL`. Secret novo: declare em `foreman.json` e passe pelo nome no passo "Worker secrets" do `deploy.yml` (nunca todos de uma vez: o GitHub segura o run em repositório público; nome só com letras, dígitos e `_`, sem começar com `GITHUB_`; nunca `CLOUDFLARE_*`, `NEON_*` ou `DATABASE_URL*`, que o Elfo grava sozinho).
+- Secrets do Worker = os de `foreman.json` `secrets[]` que existirem no repositório + `DATABASE_URL`. Secret novo: declare em `foreman.json` e passe pelo nome no passo "Worker secrets" do `deploy.yml` e do `preview.yml` (nunca todos de uma vez: o GitHub segura o run em repositório público; nome só com letras, dígitos e `_`, sem começar com `GITHUB_`; nunca `CLOUDFLARE_*`, `NEON_*` ou `DATABASE_URL*`, que o Elfo grava sozinho).

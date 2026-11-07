@@ -141,7 +141,8 @@ jobs:
         run: pnpm db:migrate
 
       # Each app secret by name (the ones in foreman.json): never all secrets at once, which GitHub
-      # holds for approval in public repositories. A new app secret goes here and in foreman.json.
+      # holds for approval in public repositories. A new app secret goes here, in preview.yml and in
+      # foreman.json.
       - name: Worker secrets
         env:
           BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
