@@ -2,7 +2,8 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   // One Worker serves the whole product: the API under /api and the web app everywhere else.
   // Deploys (.github/workflows/deploy.yml) name it after the repository (`<name>` in production,
-  // `<name>-staging` in staging); this name only applies to a manual `wrangler deploy`.
+  // `<name>-staging` in staging; preview.yml: `<name>-pr-<n>` per pull request); this name only
+  // applies to a manual `wrangler deploy`.
   "name": "elfo-template-web-mobile",
   "main": "src/index.ts",
   "compatibility_date": "2026-11-01",
