@@ -48,10 +48,20 @@ export function authBaseURL(env: Bindings, requestUrl: string): string {
 function socialProviders(env: Bindings) {
   return {
     ...(env.OAUTH_GITHUB_CLIENT_ID && env.OAUTH_GITHUB_CLIENT_SECRET
-      ? { github: { clientId: env.OAUTH_GITHUB_CLIENT_ID, clientSecret: env.OAUTH_GITHUB_CLIENT_SECRET } }
+      ? {
+          github: {
+            clientId: env.OAUTH_GITHUB_CLIENT_ID,
+            clientSecret: env.OAUTH_GITHUB_CLIENT_SECRET,
+          },
+        }
       : {}),
     ...(env.OAUTH_GOOGLE_CLIENT_ID && env.OAUTH_GOOGLE_CLIENT_SECRET
-      ? { google: { clientId: env.OAUTH_GOOGLE_CLIENT_ID, clientSecret: env.OAUTH_GOOGLE_CLIENT_SECRET } }
+      ? {
+          google: {
+            clientId: env.OAUTH_GOOGLE_CLIENT_ID,
+            clientSecret: env.OAUTH_GOOGLE_CLIENT_SECRET,
+          },
+        }
       : {}),
   };
 }
