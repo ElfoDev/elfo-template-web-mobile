@@ -5,7 +5,7 @@ export const socialProviderSchema = z.enum(["github", "google"]);
 
 export type SocialProvider = z.infer<typeof socialProviderSchema>;
 
-/** Response body of `GET /auth/providers`. */
+/** Response body of `GET /api/auth/providers`. */
 export const authProvidersResponseSchema = z.object({
   emailAndPassword: z.boolean(),
   social: z.array(socialProviderSchema),

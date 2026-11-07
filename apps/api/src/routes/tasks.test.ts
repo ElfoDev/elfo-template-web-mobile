@@ -17,7 +17,7 @@ afterAll(async () => {
 });
 
 async function createTask(cookie: string, title: string) {
-  const res = await api.request("/tasks", {
+  const res = await api.request("/api/tasks", {
     method: "POST",
     cookie,
     body: JSON.stringify({ title }),
@@ -27,17 +27,17 @@ async function createTask(cookie: string, title: string) {
 }
 
 async function listTasks(cookie: string) {
-  const res = await api.request("/tasks", { cookie });
+  const res = await api.request("/api/tasks", { cookie });
   expect(res.status).toBe(200);
   return taskListResponseSchema.parse(await res.json()).tasks;
 }
 
 describe("tasks without a session", () => {
   it.each([
-    ["GET", "/tasks"],
-    ["POST", "/tasks"],
-    ["PATCH", "/tasks/00000000-0000-4000-8000-000000000000"],
-    ["DELETE", "/tasks/00000000-0000-4000-8000-000000000000"],
+    ["GET", "/api/tasks"],
+    ["POST", "/api/tasks"],
+    ["PATCH", "/api/tasks/00000000-0000-4000-8000-000000000000"],
+    ["DELETE", "/api/tasks/00000000-0000-4000-8000-000000000000"],
   ])("%s %s answers 401", async (method, path) => {
     const body = method === "POST" || method === "PATCH" ? JSON.stringify({ title: "x" }) : null;
     const res = await api.request(path, { method, body });
@@ -46,7 +46,7 @@ describe("tasks without a session", () => {
   });
 
   it("rejects an invalid session cookie", async () => {
-    const res = await api.request("/tasks", { cookie: "better-auth.session_token=forged" });
+    const res = await api.request("/api/tasks", { cookie: "better-auth.session_token=forged" });
     expect(res.status).toBe(401);
   });
 });
@@ -62,7 +62,7 @@ describe("tasks CRUD", () => {
 
     expect((await listTasks(cookie)).map((t) => t.id)).toEqual([second.id, first.id]);
 
-    const done = await api.request(`/tasks/${first.id}`, {
+    const done = await api.request(`/api/tasks/${first.id}`, {
       method: "PATCH",
       cookie,
       body: JSON.stringify({ done: true }),
@@ -70,7 +70,7 @@ describe("tasks CRUD", () => {
     expect(done.status).toBe(200);
     expect(taskSchema.parse(await done.json())).toMatchObject({ id: first.id, done: true });
 
-    const renamed = await api.request(`/tasks/${first.id}`, {
+    const renamed = await api.request(`/api/tasks/${first.id}`, {
       method: "PATCH",
       cookie,
       body: JSON.stringify({ title: "Comprar pão integral" }),
@@ -80,16 +80,16 @@ describe("tasks CRUD", () => {
       done: true,
     });
 
-    const removed = await api.request(`/tasks/${first.id}`, { method: "DELETE", cookie });
+    const removed = await api.request(`/api/tasks/${first.id}`, { method: "DELETE", cookie });
     expect(removed.status).toBe(204);
     expect((await listTasks(cookie)).map((t) => t.id)).toEqual([second.id]);
 
-    const again = await api.request(`/tasks/${first.id}`, { method: "DELETE", cookie });
+    const again = await api.request(`/api/tasks/${first.id}`, { method: "DELETE", cookie });
     expect(again.status).toBe(404);
   });
 
   it("validates the body with the shared schema", async () => {
-    const empty = await api.request("/tasks", {
+    const empty = await api.request("/api/tasks", {
       method: "POST",
       cookie: alice,
       body: JSON.stringify({ title: "   " }),
@@ -98,7 +98,7 @@ describe("tasks CRUD", () => {
     const body = apiErrorSchema.parse(await empty.json());
     expect(body.issues?.[0]?.path).toEqual(["title"]);
 
-    const tooLong = await api.request("/tasks", {
+    const tooLong = await api.request("/api/tasks", {
       method: "POST",
       cookie: alice,
       body: JSON.stringify({ title: "x".repeat(201) }),
@@ -106,7 +106,7 @@ describe("tasks CRUD", () => {
     expect(tooLong.status).toBe(400);
 
     const task = await createTask(alice, "Válida");
-    const nothing = await api.request(`/tasks/${task.id}`, {
+    const nothing = await api.request(`/api/tasks/${task.id}`, {
       method: "PATCH",
       cookie: alice,
       body: JSON.stringify({}),
@@ -115,7 +115,7 @@ describe("tasks CRUD", () => {
   });
 
   it("answers 404 for ids that are not UUIDs", async () => {
-    const res = await api.request("/tasks/not-a-uuid", { method: "DELETE", cookie: alice });
+    const res = await api.request("/api/tasks/not-a-uuid", { method: "DELETE", cookie: alice });
     expect(res.status).toBe(404);
   });
 });
@@ -136,14 +136,14 @@ describe("authorization between users", () => {
   it("cannot update or delete another user's task", async () => {
     const task = await createTask(alice, "Privada");
 
-    const update = await api.request(`/tasks/${task.id}`, {
+    const update = await api.request(`/api/tasks/${task.id}`, {
       method: "PATCH",
       cookie: bob,
       body: JSON.stringify({ done: true, title: "Hackeada" }),
     });
     expect(update.status).toBe(404);
 
-    const remove = await api.request(`/tasks/${task.id}`, { method: "DELETE", cookie: bob });
+    const remove = await api.request(`/api/tasks/${task.id}`, { method: "DELETE", cookie: bob });
     expect(remove.status).toBe(404);
 
     const stillThere = (await listTasks(alice)).find((t) => t.id === task.id);

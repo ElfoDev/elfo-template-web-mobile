@@ -13,7 +13,7 @@
     "format": "biome check --write .",
     "typecheck": "pnpm -r --no-sort typecheck",
     "test": "pnpm -r --no-sort test",
-    "build": "pnpm -r --no-sort build",
+    "build": "pnpm --filter @repo/app build && pnpm --filter @repo/api build",
     "db:generate": "pnpm --filter @repo/api db:generate",
     "db:migrate": "pnpm --filter @repo/api db:migrate",
     "check": "pnpm lint && pnpm typecheck && pnpm test"

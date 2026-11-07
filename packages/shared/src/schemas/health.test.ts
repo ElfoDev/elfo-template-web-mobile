@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { healthResponseSchema } from "./health";
+import { databaseHealthResponseSchema, healthResponseSchema } from "./health";
 
 describe("healthResponseSchema", () => {
   it("accepts a valid payload", () => {
@@ -23,5 +23,18 @@ describe("healthResponseSchema", () => {
       timestamp: "yesterday",
     });
     expect(result.success).toBe(false);
+  });
+});
+
+describe("databaseHealthResponseSchema", () => {
+  it("accepts ok", () => {
+    const payload = { status: "ok", database: "ok" };
+    expect(databaseHealthResponseSchema.parse(payload)).toEqual(payload);
+  });
+
+  it("rejects anything but ok", () => {
+    expect(databaseHealthResponseSchema.safeParse({ status: "ok", database: "down" }).success).toBe(
+      false,
+    );
   });
 });

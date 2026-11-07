@@ -10,7 +10,12 @@ export {
   socialProviderSchema,
 } from "./schemas/auth";
 export { type ApiError, apiErrorSchema } from "./schemas/error";
-export { type HealthResponse, healthResponseSchema } from "./schemas/health";
+export {
+  type DatabaseHealthResponse,
+  databaseHealthResponseSchema,
+  type HealthResponse,
+  healthResponseSchema,
+} from "./schemas/health";
 export {
   type CreateTaskInput,
   createTaskSchema,

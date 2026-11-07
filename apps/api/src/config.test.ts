@@ -1,18 +1,21 @@
 import { PASSWORD_MIN_LENGTH } from "@repo/shared";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createApp } from "./app";
+import { authBaseURL, trustedOrigins } from "./auth";
 import type { Database } from "./db/client";
 import { createPgliteDb, type PgliteDb } from "./db/pglite";
 import type { Bindings } from "./env";
 import { cookieFrom } from "./test/helpers";
 
-const WEB = "https://api.example.com";
+/** The deployed Worker's own URL: it serves the web app and the API on one origin. */
+const WEB = "https://my-app.example.workers.dev";
 
-/** What the deployed Worker has: no ENVIRONMENT, so every dev default is off. */
+/**
+ * What the deploy gives the Worker: secrets only. No ENVIRONMENT (every dev default is off),
+ * no BETTER_AUTH_URL or TRUSTED_ORIGINS (the API's own origin comes from the request).
+ */
 const PROD_ENV: Bindings = {
   BETTER_AUTH_SECRET: "test-secret-test-secret-test-secret-test-secret",
-  BETTER_AUTH_URL: WEB,
-  TRUSTED_ORIGINS: `${WEB},foremanapp://`,
 };
 
 let pglite: PgliteDb;
@@ -25,66 +28,99 @@ afterAll(async () => {
   await pglite.close();
 });
 
-/** POST from the web origin; `ip` is the client address (Cloudflare's header), a rate-limit key. */
+/** POST to the deployed URL; `ip` is the client address (Cloudflare's header), a rate-limit key. */
 function post(
   app: ReturnType<typeof createApp>,
   path: string,
   body: unknown,
   env: Bindings,
   ip = "203.0.113.7",
+  headers: Record<string, string> = { origin: WEB },
 ) {
   return app.request(
-    path,
+    `${WEB}${path}`,
     {
       method: "POST",
-      headers: { "content-type": "application/json", origin: WEB, "cf-connecting-ip": ip },
+      headers: { "content-type": "application/json", "cf-connecting-ip": ip, ...headers },
       body: JSON.stringify(body),
     },
     env,
   );
 }
 
-describe("fails closed outside development", () => {
-  it("answers 500 naming TRUSTED_ORIGINS when it is missing", async () => {
+describe("origins outside development", () => {
+  it("serves auth on the request's own origin with no URL configured", async () => {
     const app = createApp({ db: pglite.db });
-    const { TRUSTED_ORIGINS: _, ...env } = PROD_ENV;
+    const res = await post(
+      app,
+      "/api/auth/sign-up/email",
+      { name: "Web", email: "web@example.com", password: "correct-horse-battery" },
+      PROD_ENV,
+    );
+    expect(res.status).toBe(200);
+    // https origin: Better Auth sets secure cookies.
+    expect(cookieFrom(res)).toContain("__Secure-better-auth.session_token=");
+  });
 
-    for (const path of ["/api/auth/get-session", "/tasks"]) {
-      const res = await app.request(path, { headers: { origin: "http://localhost:8081" } }, env);
-      expect(res.status).toBe(500);
-      expect(await res.json()).toEqual({
-        error: expect.stringContaining("TRUSTED_ORIGINS is not set"),
-      });
+  it("trusts the app scheme (dev and store builds)", async () => {
+    const app = createApp({ db: pglite.db });
+    const res = await post(
+      app,
+      "/api/auth/sign-up/email",
+      { name: "Native", email: "native@example.com", password: "correct-horse-battery" },
+      PROD_ENV,
+      "203.0.113.8",
+      { "expo-origin": "foremanapp://" },
+    );
+    expect(res.status).toBe(200);
+  });
+
+  it("trusts no other site, the dev web server or Expo Go", async () => {
+    const app = createApp({ db: pglite.db });
+    const body = { email: "web@example.com", password: "correct-horse-battery" };
+    const untrusted: Record<string, string>[] = [
+      { origin: "https://evil.example" },
+      { origin: "http://localhost:8081" },
+      { "expo-origin": "exp://192.168.0.10:8081" },
+    ];
+    for (const headers of untrusted) {
+      const res = await post(
+        app,
+        "/api/auth/sign-in/email",
+        body,
+        PROD_ENV,
+        "203.0.113.10",
+        headers,
+      );
+      expect(res.status).toBe(403);
     }
   });
 
-  it("answers 500 naming BETTER_AUTH_URL when it is missing", async () => {
+  it("trusts the extra origins in TRUSTED_ORIGINS", async () => {
     const app = createApp({ db: pglite.db });
-    const { BETTER_AUTH_URL: _, ...env } = PROD_ENV;
+    const env = { ...PROD_ENV, TRUSTED_ORIGINS: "https://web.example.com" };
+    const res = await post(
+      app,
+      "/api/auth/sign-in/email",
+      { email: "web@example.com", password: "correct-horse-battery" },
+      env,
+      "203.0.113.11",
+      { origin: "https://web.example.com" },
+    );
+    expect(res.status).toBe(200);
+  });
 
-    const res = await app.request("/api/auth/get-session", {}, env);
+  it("still fails closed without BETTER_AUTH_SECRET", async () => {
+    const app = createApp({ db: pglite.db });
+    const res = await app.request(`${WEB}/api/auth/get-session`, {}, {});
     expect(res.status).toBe(500);
     expect(await res.json()).toEqual({
-      error: expect.stringContaining("BETTER_AUTH_URL is not set"),
+      error: expect.stringContaining("BETTER_AUTH_SECRET is not set"),
     });
   });
 
-  it("does not trust the dev origins or derive the URL from the request", async () => {
-    const app = createApp({ db: pglite.db });
-    const dev = await app.request(
-      "/api/auth/sign-in/email",
-      {
-        method: "POST",
-        headers: { "content-type": "application/json", origin: "http://localhost:8081" },
-        body: JSON.stringify({ email: "x@example.com", password: "whatever-password" }),
-      },
-      PROD_ENV,
-    );
-    expect(dev.status).toBe(403);
-  });
-
   it("keeps routes that need no auth or database working", async () => {
-    const res = await createApp().request("/health", {}, {});
+    const res = await createApp().request("/api/health", {}, {});
     expect(res.status).toBe(200);
   });
 
@@ -92,7 +128,7 @@ describe("fails closed outside development", () => {
     const app = createApp({ db: pglite.db });
     for (const CORS_ORIGINS of [undefined, "*"]) {
       const res = await app.request(
-        "/health",
+        "/api/health",
         { headers: { origin: "https://evil.example" } },
         { ...PROD_ENV, CORS_ORIGINS },
       );
@@ -103,19 +139,69 @@ describe("fails closed outside development", () => {
 
   it("allows the listed origin, with credentials only if it is trusted", async () => {
     const app = createApp({ db: pglite.db });
-    const env = { ...PROD_ENV, CORS_ORIGINS: `${WEB},https://other.example` };
+    const OTHER_WEB = "https://web.example.com";
+    const env = {
+      ...PROD_ENV,
+      TRUSTED_ORIGINS: OTHER_WEB,
+      CORS_ORIGINS: `${OTHER_WEB},https://other.example`,
+    };
 
-    const trusted = await app.request("/health", { headers: { origin: WEB } }, env);
-    expect(trusted.headers.get("access-control-allow-origin")).toBe(WEB);
+    const trusted = await app.request("/api/health", { headers: { origin: OTHER_WEB } }, env);
+    expect(trusted.headers.get("access-control-allow-origin")).toBe(OTHER_WEB);
     expect(trusted.headers.get("access-control-allow-credentials")).toBe("true");
 
     const other = await app.request(
-      "/health",
+      "/api/health",
       { headers: { origin: "https://other.example" } },
       env,
     );
     expect(other.headers.get("access-control-allow-origin")).toBe("https://other.example");
     expect(other.headers.get("access-control-allow-credentials")).toBeNull();
+  });
+});
+
+describe("authBaseURL", () => {
+  it("is the request's origin by default, in every environment", () => {
+    expect(authBaseURL({}, `${WEB}/api/auth/session`)).toBe(WEB);
+    expect(authBaseURL({ ENVIRONMENT: "development" }, "http://localhost:8787/api/x")).toBe(
+      "http://localhost:8787",
+    );
+  });
+
+  it("is BETTER_AUTH_URL when set", () => {
+    expect(authBaseURL({ BETTER_AUTH_URL: "https://app.example.com" }, `${WEB}/api/x`)).toBe(
+      "https://app.example.com",
+    );
+  });
+});
+
+describe("trustedOrigins", () => {
+  it("outside development: own origins, the app scheme and TRUSTED_ORIGINS", () => {
+    expect(trustedOrigins({}, `${WEB}/api/x`, WEB)).toEqual([WEB, "foremanapp://"]);
+    expect(
+      trustedOrigins(
+        { TRUSTED_ORIGINS: "https://web.example.com" },
+        `${WEB}/api/x`,
+        "https://app.example.com",
+      ),
+    ).toEqual([WEB, "https://app.example.com", "foremanapp://", "https://web.example.com"]);
+  });
+
+  it("in development: own origin plus the dev defaults, or TRUSTED_ORIGINS instead", () => {
+    const local = "http://localhost:8787";
+    expect(trustedOrigins({ ENVIRONMENT: "development" }, `${local}/x`, local)).toEqual([
+      local,
+      "http://localhost:8081",
+      "foremanapp://",
+      "exp://",
+    ]);
+    expect(
+      trustedOrigins(
+        { ENVIRONMENT: "development", TRUSTED_ORIGINS: "http://192.168.0.10:8081" },
+        `${local}/x`,
+        local,
+      ),
+    ).toEqual([local, "http://192.168.0.10:8081"]);
   });
 });
 
@@ -189,7 +275,7 @@ describe("no database transactions", () => {
     const signIn = await post(app, "/api/auth/sign-in/email", credentials, PROD_ENV, "203.0.113.9");
     expect(signIn.status).toBe(200);
     const signOut = await app.request(
-      "/api/auth/sign-out",
+      `${WEB}/api/auth/sign-out`,
       { method: "POST", headers: { origin: WEB, cookie: cookieFrom(signIn) } },
       PROD_ENV,
     );

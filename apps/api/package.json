@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "tsx watch --clear-screen=false scripts/dev.ts",
-    "dev:worker": "wrangler dev --ip 0.0.0.0 --port 8787",
+    "dev:worker": "pnpm --filter @repo/app build && wrangler dev --ip 0.0.0.0 --port 8787",
     "build": "wrangler deploy --dry-run --outdir dist",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx scripts/migrate.ts",

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { fetchAuthProviders } from "@/lib/api";
 
 /**
- * OAuth providers enabled on the API (`GET /auth/providers`). Empty while loading or if
+ * OAuth providers enabled on the API (`GET /api/auth/providers`). Empty while loading or if
  * the request fails: email + password always works.
  */
 export function useSocialProviders(): SocialProvider[] {

@@ -1,4 +1,4 @@
-import { type Auth, authBaseURL, createAuth } from "./auth";
+import { type Auth, createAuth } from "./auth";
 import { ConfigError } from "./config";
 import { createNeonDb, type Database } from "./db/client";
 import type { Bindings } from "./env";
@@ -10,7 +10,7 @@ export type Services = {
 
 /**
  * Per-request services, created on first use: routes that never touch the database
- * (e.g. `/health`) work without `DATABASE_URL` or `BETTER_AUTH_SECRET`.
+ * (e.g. `/api/health`) work without `DATABASE_URL` or `BETTER_AUTH_SECRET`.
  *
  * @param db Database to use instead of Neon (tests and the local dev server inject PGlite).
  */
@@ -35,11 +35,7 @@ export function createServices(env: Bindings, requestUrl: string, db?: Database)
       return getDb();
     },
     get auth() {
-      auth ??= createAuth({
-        db: getDb(),
-        env,
-        baseURL: authBaseURL(env, requestUrl),
-      });
+      auth ??= createAuth({ db: getDb(), env, requestUrl });
       return auth;
     },
   };
